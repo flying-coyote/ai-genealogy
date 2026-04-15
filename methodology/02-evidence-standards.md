@@ -25,7 +25,8 @@ AI can assist each element — searching platforms, drafting citations, flagging
 | Tier | Category | Examples |
 |---|---|---|
 | 1 | Official government records | Birth certificates, death certificates, marriage licenses, probate wills and inventories, military service records, naturalization records, land deeds |
-| 2 | Near-contemporary records | Federal/state census, church registers (baptisms, burials, marriages), newspapers, city directories, passenger manifests, draft registrations |
+| 2a | Original near-contemporaneous records | Church registers in original archives, contemporaneous newspapers, original passenger manifests, original draft registrations, original county deed/will books |
+| 2b | Derivative/transcribed near-primary records | Indexed census transcriptions (Ancestry/FS), FindAGrave transcriptions from stones, city directories (abstracts of records), microfilm or digital copies of registers |
 | 3 | Published genealogies with citations | Book genealogies that cite T1-2 sources inline, articles in peer-reviewed genealogical journals (NGSQ, TAG, NEHGR) |
 | 4 | Family documents and oral history | Family bibles, diaries, letters, oral testimony, home photographs with identified subjects |
 | 5 | Online trees | Ancestry member trees, FamilySearch collaborative tree, Geni, WikiTree biographies without inline citations |
@@ -61,6 +62,8 @@ Newly added persons may enter the tree at POSSIBLE confidence sourced from Famil
 POSSIBLE-seeding lets you extend a lineage speculatively for research purposes without contaminating external platforms with unverified claims. The `upgrade_path` field converts "needs more research" into a specific, actionable research target.
 
 **The critical invariant**: POSSIBLE-confidence links are never contributed to FamilySearch, WikiTree, or any other external platform. The tree is a research workspace. External contributions require T1-3 backing.
+
+> **Note**: POSSIBLE seeding is debated across projects. The risk is that a wrong Tier 5 link, once accepted as POSSIBLE, can attract sources for the wrong person and silently rise in confidence. See [`lessons/CONTESTED.md`](../lessons/CONTESTED.md) — "POSSIBLE seeding" entry — before adopting this pattern. The guardrails that make it acceptable: populated `upgrade_path`, validate-tree checks that flag stale POSSIBLE persons, and the non-negotiable no-external-contribution rule.
 
 ---
 
@@ -102,7 +105,7 @@ Every source object must carry:
 | `evidence_type` | direct, indirect, or negative |
 | `ark` | Persistent URL or ARK identifier |
 
-The `proves` field is not optional. "Birth record" is not sufficient. "Birth certificate confirms birth 15 March 1842 in Augusta County VA, parents Thomas Wiley and Mary Ann Holt" is the target level of specificity. This field is what enables automated confidence recalculation and GPS compliance checking.
+The `proves` field is not optional. "Birth record" is not sufficient. "Birth certificate confirms birth 15 March 1842 in Augusta County VA, parents Thomas Wiley and Mary Ann Holt" is the target level of specificity. This field enables automated confidence recalculation and evidence analysis.
 
 ---
 
@@ -122,10 +125,12 @@ Most genealogical evidence is indirect. A census does not record birth dates —
 
 | Confidence | Minimum evidence |
 |---|---|
-| `VERIFIED` | ≥2 independent Tier 1-2 sources, no unresolved blocking concerns |
-| `PROBABLE` | ≥1 Tier 1-3 source |
-| `POSSIBLE` | No T1-3 sources, or Tier 5 only |
+| `VERIFIED` | ≥2 independent Tier 1 or Tier 2a sources, no unresolved blocking concerns |
+| `PROBABLE` | ≥1 Tier 1 or Tier 2a source; OR ≥2 independent Tier 2b sources from distinct derivations |
+| `POSSIBLE` | No T1-2a sources; or Tier 2b/3/4/5 only |
 | `UNVERIFIED` | Not yet researched |
+
+The Tier 2a/2b distinction matters here. A church register image and a census transcription are both "Tier 2" in many systems, but only the original register qualifies as Tier 2a. Two Ancestry-transcribed census records are both Tier 2b — they can support PROBABLE together, but two 2b sources from the *same* original record do not count as independent.
 
 "Independent" means the sources do not derive from the same original record. A transcription and the original document are not independent. Two censuses both copied from the same family's self-report are borderline — they corroborate each other but share the same informant.
 

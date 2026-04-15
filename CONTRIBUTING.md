@@ -138,6 +138,23 @@ Each project's own `LESSONS_LEARNED.md` / `LEARNINGS.md` stays as the local work
 
 ---
 
+## Session Contribution Workflow
+
+At the end of any session where you documented a new pattern in your local `LESSONS_LEARNED.md`:
+
+1. Run: `python3 /home/jerem/ai-genealogy/starter-kit/scripts/promote-lessons.py --check`
+2. Review the output: it classifies each rule as ALREADY_CONFIRMED, CONFIRM_THIS, NEW_PROVISIONAL, or SKIP
+3. **CONFIRM_THIS**: edit `lessons/LESSONS.md` directly — change `[PROVISIONAL]` → `[CONFIRMED ×2]` and add attribution
+4. **NEW_PROVISIONAL**: run with `--stage` to append the entry to `lessons/PROVISIONAL.md`
+5. **SKIP**: no action needed (already documented in CONTESTED.md)
+6. Commit any `LESSONS.md` or `PROVISIONAL.md` changes in the **ai-genealogy repo** (not the sister project)
+
+`promote-lessons.py` never writes to `LESSONS.md` directly — it only surfaces candidates. Human judgment decides whether a candidate truly belongs. The script uses fuzzy matching with a 65% similarity threshold to detect duplicate rules across minor wording variations.
+
+The script auto-detects the local lessons file (`docs/LESSONS_LEARNED.md`, `LESSONS_LEARNED.md`, `research/LEARNINGS.md`) and the shared lessons directory (`docs/lessons-shared/` symlink or `/path/to/ai-genealogy/lessons`). Pass `--local` or `--lessons-dir` to override.
+
+---
+
 ## The Three Sister Projects
 
 | Project | Primary line | Size |

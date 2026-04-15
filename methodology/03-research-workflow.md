@@ -102,6 +102,7 @@ At the end of every session that touches a person:
 - [ ] Resolved concerns moved to `validation.corrections_applied[]`
 - [ ] Research queue updated: completed persons moved to completed array
 - [ ] `RESEARCH_PRIORITY_PLAN.md` updated if any priorities changed
+- [ ] If you documented any new patterns in `LESSONS_LEARNED.md` this session, run `python3 /path/to/ai-genealogy/starter-kit/scripts/promote-lessons.py --check` and stage any promotion candidates
 
 Skipping close hygiene means the next session restores from a degraded state. Over dozens of sessions, this compounds into a tree where confidence values do not reflect current evidence and the research queue contains items that were resolved months ago.
 

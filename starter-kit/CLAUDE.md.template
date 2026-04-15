@@ -36,16 +36,19 @@ NEVER start browser research without first reading `research/cache/{GEDCOM_ID}.j
 | Tier | Description | Examples |
 |------|-------------|---------|
 | 1 | Official records | Birth/death/marriage certificates, draft cards, SSDI, court records, wills, deeds |
-| 2 | Near-contemporary records | Census, church registers, newspapers, city directories |
-| 3 | Published genealogies | Books with citations, historical society compilations |
-| 4 | Oral history / family documents | Family bibles, personal letters, undated photos |
-| 5 | Online trees | Ancestry, FamilySearch, WikiTree, Geni, MyHeritage (leads only) |
+| 2a | Original near-contemporaneous records | Church registers in original archives, contemporaneous newspapers, original passenger manifests, original draft registrations, original county deed/will books |
+| 2b | Derivative/transcribed near-primary records | Indexed census transcriptions (Ancestry/FS), FindAGrave transcriptions from stones, microfilm or digital copies of registers |
+| 3 | Published genealogies | Books with inline citations, historical society compilations, peer-reviewed genealogical journals |
+| 4 | Oral history / family documents | Family bibles, personal letters, undated photos, oral testimony |
+| 5 | Online trees | Ancestry, FamilySearch, WikiTree, Geni, MyHeritage (leads only — not evidence) |
 
 ### Confidence Levels
-- **VERIFIED**: ≥2 independent Tier 1-2 sources, no blocking concerns
-- **PROBABLE**: ≥1 Tier 1-3 source with direct evidence
-- **POSSIBLE**: Tier 5 / tree-only evidence, or 0 T1-3 sources. Requires `upgrade_path` field.
+- **VERIFIED**: ≥2 independent Tier 1 or Tier 2a sources, no unresolved blocking concerns
+- **PROBABLE**: ≥1 Tier 1 or Tier 2a source; OR ≥2 independent Tier 2b sources from distinct derivations
+- **POSSIBLE**: No Tier 1-2a sources; or Tier 2b/3/4/5 only. Requires `upgrade_path` field.
 - **UNVERIFIED**: Not yet researched
+
+"Independent" means the sources do not derive from the same original record. Two Ancestry-transcribed census records are both Tier 2b — they can together support PROBABLE, but only if they come from different census years (different originals). A transcription and its source document are not independent.
 
 **Confidence cannot exceed evidence.** 0 sources = POSSIBLE max regardless of what a prior session set. Any upgrade requires evidence that actually supports the new level.
 

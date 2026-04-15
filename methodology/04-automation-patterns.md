@@ -119,7 +119,7 @@ Extend to Gen 17 or wherever T1-3 evidence supports. Do not chase pre-1600 linea
 
 **Actions it manages:**
 - Source backfill (harvest from newly discovered FS profiles)
-- GPS compliance remediation (fixing PARTIAL records toward COMPLIANT)
+- GPS precondition remediation (addressing PARTIAL search coverage and missing citations)
 - Confidence recalculation
 - Citation standardization
 
@@ -152,15 +152,17 @@ Syncs platform ID drift between `tree.json` and `research_queue.json`. When a di
 
 Reports per-person GPS (Genealogical Proof Standard) element status. GPS elements 1-5 are tracked separately:
 
-| Element | What it checks |
-|---------|---------------|
-| E1 | Exhaustive search coverage across expected platforms |
-| E2 | Complete and accurate citations |
-| E3 | Analysis of all sources |
-| E4 | Conflict resolution documented |
-| E5 | Written conclusion |
+| Element | What the script checks | Automated? |
+|---------|----------------------|-----------|
+| E1 | Search coverage across expected platforms | ✓ Yes |
+| E2 | Complete and accurate citations | ✓ Yes |
+| E3 | Analysis and correlation of all sources | ✗ Human only |
+| E4 | Conflict resolution documented | Partial (flags unresolved concerns) |
+| E5 | Soundly reasoned conclusion | ✗ Human only |
 
-A person can be PARTIAL on E1 (WikiTree not yet checked) but PASS on E2 (all attached sources have full citations). The compliance report surfaces these granular gaps, which matters for prioritizing remediation effort.
+A person can be PARTIAL on E1 (WikiTree not yet checked) but PASS on E2 (all attached sources have full citations). The report surfaces these granular gaps for prioritizing remediation effort.
+
+**Important**: This is a precondition checklist, not GPS compliance. A person whose E1-E4 preconditions are all met still requires human review to determine whether the overall conclusion is soundly reasoned (E5). "Passed the GPS precondition report" ≠ "GPS-compliant."
 
 ---
 
@@ -193,6 +195,23 @@ Contribution is always staged. Nothing writes to an external platform as a side 
 - Source hint acceptance requires human review via the UI. No batch acceptance via API.
 - Internal hints API is cookie-based and useful for programmatic extraction of hint metadata, but the actual accept/decline action happens in the browser.
 
+## Quality Metrics (Defense Against Volume Drift)
+
+The automation pipeline optimizes for coverage — more persons, more sources attached. Left unchecked, coverage optimization undermines defensibility. Track these metrics after major sessions to make quality drift visible before it becomes a correction campaign.
+
+| Metric | Alert Threshold | Why It Matters |
+|--------|----------------|----------------|
+| % direct-line ancestors at POSSIBLE confidence | >15% | Too many unverified lineage segments in active use |
+| % sources from Tier 3-5 | >40% | Tree is relying too heavily on secondary/derivative sources |
+| POSSIBLE persons missing `upgrade_path` | Any | These are research liabilities with no documented action path |
+| Proposed contributions backed only by Tier 3-5 evidence | Any | Block; require T1-2 before contributing to any external platform |
+
+Run `python3 scripts/metrics-report.py` to generate the current distribution. Add the summary output to `docs/SESSION_HISTORY.md` at each session close.
+
+The Tier 3-5 threshold deserves emphasis: a tree where most sources come from census transcriptions and online trees will appear well-sourced while remaining structurally unverifiable. The source tier distribution is the single most informative quality signal — more so than raw source counts.
+
+---
+
 ### Automation Gates Summary
 
 | Activity | Level of automation |
@@ -203,7 +222,7 @@ Contribution is always staged. Nothing writes to an external platform as a side 
 | Confidence recalculation | Automated |
 | Citation standardization | Automated |
 | Queue management | Automated |
-| GPS compliance report | Automated (report only) |
+| GPS precondition report | Automated (preconditions only — E3/E5 require human) |
 | External platform writes | Dry-run review required |
 | GPS remediation patches | Dry-run review required |
 | Confidence downgrades | Dry-run review required |

@@ -32,6 +32,26 @@ The script that builds the research queue should filter to Ahnentafel members on
 
 ---
 
+## Cross-Platform Person Identity Verification
+
+Before assigning a FamilySearch PID, WikiTree ID, or Ancestry record to a person in your tree, require ≥2 of the following five attributes to align:
+
+1. **Name** — exact match or a documented spelling variant
+2. **Birth/death span** — overlap within ±3 years (allow estimation error in historical records)
+3. **Spouse or children** — at least one named family member matches
+4. **Birthplace** — county or parish match (or a documented migration explains the difference)
+5. **Source consistency** — the platform profile cites records corroborating your person's documented facts
+
+A name-only match is not identity confirmation. It is a research lead. This is the single most common source of cascading errors in AI-assisted genealogy: attaching a wrong platform profile appears to add sources, raises confidence incorrectly, and then attracts further wrong sources for the wrong person. The error compounds silently until the FS community flags a conflict or a contradicting primary record surfaces.
+
+**When a match scores only 1 of 5 checks**: log it as a candidate in the research journal, not as a confirmed platform ID. Set `platform_ids.familysearch = null` and add a `notes` entry: "Candidate PID [X] — name match only; birth year, birthplace, and spouse unconfirmed."
+
+**The cost of a false match**: A wrong FS PID attached to a tree person means every source harvest from that profile attaches wrong-person evidence. A wrong WikiTree ID means biography edits go to the wrong profile. A wrong Ancestry record match accepts evidence for someone else's ancestor into your tree. These errors are harder to find than the missed match they replaced.
+
+**Minimum identity check for lineage extension**: Before the loop-research pipeline stages a parent patch, it must confirm that the FS parent profile's birth year is plausible (within ±3 years of estimated birth, not younger than the child). This is the automated floor. Human review should go further — spot-check spouse name and birthplace before applying any patch for a new ancestor.
+
+---
+
 ## Pre-1700 Identity Claims
 
 European aristocracy and noble lineages before 1700 are the most thoroughly conflated record space in genealogy. Every online tree, every Geneanet entry, every FS profile claiming descent from a medieval king exists in an ecosystem of circular citation. Tree A cites Tree B which cites Tree C which cites Tree A.

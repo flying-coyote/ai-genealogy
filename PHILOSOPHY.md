@@ -33,7 +33,7 @@ The [Genealogical Proof Standard (BCG)](https://www.bcgcertification.org/resourc
 4. **Resolution of conflicts** — contradicting evidence has been addressed and documented
 5. **Soundly reasoned conclusion** — the confidence level is justified by the evidence
 
-This guide treats GPS compliance as a property of individual persons in the tree, computed from their source list and evidence analysis. AI automation supports each element: batch citation standardization (E2), coverage tracking (E1), confidence calculation (E3-E5), and conflict flagging (E4). But GPS is ultimately a human standard — no script can declare a conclusion "soundly reasoned."
+This guide treats GPS readiness as a set of preconditions tracked per person. AI automation verifies preconditions for each element: coverage tracking (E1), batch citation standardization (E2), conflict flagging (E4). Elements E3 and E5 require human judgment — no script can evaluate whether evidence was properly correlated or declare a conclusion "soundly reasoned." GPS is a human standard. The scripts check whether the mechanical prerequisites are in place; a human determines whether the conclusion meets the standard.
 
 ## The human-AI boundary
 

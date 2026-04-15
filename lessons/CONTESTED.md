@@ -42,9 +42,9 @@ These are worth understanding — they reveal genuine complexity, not simple err
 
 **Side B (genealogy, dry-cross)**: Allowing POSSIBLE-seeded parent links from Tier 5 sources risks graph-wiring errors cascading through the tree. If a bad Tier 5 link gets accepted as POSSIBLE and a researcher adds sources to the wrong person, the confidence can accidentally rise. Prefer no parent link at all over a Tier 5-sourced one; document the candidate parent in the journal instead.
 
-**Current resolution**: Both approaches are valid for different use cases. For a tree in active extension mode (adding many new persons), POSSIBLE seeding with explicit `upgrade_path` is pragmatic. For a mature tree focused on quality over coverage, no-parent-link is cleaner. **The critical invariant both sides agree on**: POSSIBLE-confidence links must never be contributed to external platforms. The tree.json is a research workspace; external contributions require Tier 1-3 backing.
+**Current resolution**: Resolved with guardrails. POSSIBLE seeding is permitted IF: (1) the person carries a populated `upgrade_path` field describing exactly what T1-3 evidence would promote them; (2) the tree validation script flags any POSSIBLE person whose `upgrade_path` hasn't been actioned after N sessions, preventing indefinite stale seeding; (3) no POSSIBLE-confidence parent link is ever contributed to FamilySearch, WikiTree, or any external platform — the tree.json is a research workspace, not a contribution source. Projects that prefer no-link-at-all are equally valid and face less contamination risk; the choice is a project-phase judgment call. The critical invariant — no external contribution of POSSIBLE-confidence links — is non-negotiable regardless of which approach the project uses.
 
-**Status**: Unresolved — depends on project phase and risk tolerance.
+**Status**: Resolved with guardrails — see `methodology/02-evidence-standards.md` POSSIBLE Seeding section for implementation details.
 
 ---
 
