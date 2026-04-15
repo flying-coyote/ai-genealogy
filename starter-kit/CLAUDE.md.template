@@ -1,0 +1,247 @@
+# [FAMILY NAME] Genealogy Project
+
+<!-- SETUP: Replace every {{PLACEHOLDER}} before your first session. -->
+
+## Purpose
+{{PRIMARY_PERSON}} family tree — {{PERSON_COUNT}} persons, Gen 2-{{MAX_GEN}}. BCG-standards genealogy research, source documentation, and platform contributions.
+
+## Quick Reference
+- **Data**: `data/tree.json` | **Status**: `research/RESEARCH_PRIORITY_PLAN.md`
+- **Validate**: `python3 scripts/validate-tree.py`
+- **Reconcile**: `python3 scripts/reconcile-queue.py`
+- **Build Cache**: `python3 scripts/build-context-cache.py --queue`
+- **Bootstrap Journals**: `python3 scripts/create-research-journal.py --queue`
+- **Research Loop**: `python3 scripts/loop-research-dispatch.py --quiet` (one cycle)
+
+---
+
+## The Three Non-Negotiables
+
+These rules are non-negotiable. They apply in every session, for every person, regardless of how convenient it would be to skip them.
+
+**1. Trees are leads, never sources.**
+Ancestry, FamilySearch, WikiTree, Geni, MyHeritage family trees are all Tier 5. They point to records; they are not evidence. Extract the attached records and cite those. A parent link built on tree-only evidence is POSSIBLE confidence at best and must carry an `upgrade_path` field describing what T1-3 evidence would promote it. Never contribute parent links based solely on Tier 5 evidence to any external platform.
+
+**2. Document negative searches.**
+"Searched Ancestry for {{PRIMARY_SURNAME}}, found nothing" is evidence — it proves exhaustive research (GPS Element 1) and prevents re-running the same dead-end search next session. Write it in the journal AND in `validation.evidence.negative_searches[]`. An undocumented search doesn't exist.
+
+**3. Context-first.**
+NEVER start browser research without first reading `research/cache/{GEDCOM_ID}.json`. It holds prior platform search history, attached sources, and known gaps. Skipping it produces duplicated work and risks re-introducing resolved errors.
+
+---
+
+## Quality Standards
+
+### Source Tiers
+| Tier | Description | Examples |
+|------|-------------|---------|
+| 1 | Official records | Birth/death/marriage certificates, draft cards, SSDI, court records, wills, deeds |
+| 2 | Near-contemporary records | Census, church registers, newspapers, city directories |
+| 3 | Published genealogies | Books with citations, historical society compilations |
+| 4 | Oral history / family documents | Family bibles, personal letters, undated photos |
+| 5 | Online trees | Ancestry, FamilySearch, WikiTree, Geni, MyHeritage (leads only) |
+
+### Confidence Levels
+- **VERIFIED**: ≥2 independent Tier 1-2 sources, no blocking concerns
+- **PROBABLE**: ≥1 Tier 1-3 source with direct evidence
+- **POSSIBLE**: Tier 5 / tree-only evidence, or 0 T1-3 sources. Requires `upgrade_path` field.
+- **UNVERIFIED**: Not yet researched
+
+**Confidence cannot exceed evidence.** 0 sources = POSSIBLE max regardless of what a prior session set. Any upgrade requires evidence that actually supports the new level.
+
+### Required Source Fields
+Every source object in `validation.evidence.sources[]` must have:
+```json
+{
+  "name": "Record title",
+  "title": "Collection: Record title",
+  "tier": 2,
+  "platform": "FamilySearch",
+  "type": "census_record",
+  "added": "YYYY-MM-DD",
+  "proves": "birth year, residence",
+  "evidence_type": "direct",
+  "ark": "https://..."
+}
+```
+
+---
+
+## Data Model
+
+### tree.json Structure
+- `persons` is a **list** (not dict) — iterate with `for p in tree['persons']`
+- Person name: `p['canonical_name']`
+- Birth/death: `p['birth']`, `p['death']` (top-level dicts, use `.get()`)
+- Confidence: `p['validation']['confidence']` — CANONICAL (always read/write this)
+- Platform IDs: `p['platform_ids']['familysearch']`, `['wikitree']`, `['geni']`
+- Sources: `p['validation']['evidence']['sources']` (list of dicts)
+- `validation.source_count` AND `validation.evidence.source_count` must match `len(sources)`
+- `lineage_part` can be None — filter with `if part is not None`
+
+### GEDCOM IDs
+Primary identifiers from Ancestry export (`@I12345@` format). Platform IDs stored separately in `platform_ids`.
+
+---
+
+## Platform Research Sequence
+
+Research platforms in this order for American genealogy (1700-1950):
+
+**Ancestry → FamilySearch → WikiTree → Find A Grave → Geni → Chronicling America**
+
+Why this order: population coverage × access cost × data reliability. Adjust for non-US lineages (e.g., prioritize church archives and national registries for European ancestry).
+
+For each platform:
+1. Read `research/cache/{ID}.json` first — check if this platform was already searched
+2. Document what you searched and what you found (or didn't find)
+3. Attach sources immediately; don't batch them for later
+4. Write journal entry before moving to the next platform
+
+### FamilySearch-Specific Notes
+- Always use `api.familysearch.org`, never `www.familysearch.org` (WAF blocks scripts)
+- Read the **Collaborate tab** before attaching any source — surfaces disputes and competing parent sets
+- `GET /platform/tree/persons/{PID}/sources` = only sources already attached to the FS profile
+- Browser record search finds unlinked indexed records — both steps are necessary
+- Full-Text Search (`https://www.familysearch.org/search/full-text`) finds 18th-century wills/deeds that don't appear in person-record search; use `+term` to require terms (otherwise OR'd)
+
+### Ancestry-Specific Notes
+- Hint cards contain duplicate URLs — deduplicate before processing
+- Use `hintStatus=pending` review URL for accepts, not the merge URL
+- When clicking multiple ignore buttons, fetch all handles upfront with `$$` not `$`
+- React combobox date/place fields: use Playwright native click+type, not JS value setter
+
+### Find A Grave Notes
+- Search married women by SSDI/death-record surname, not maiden name
+- FAG dates without source citations are Tier 5 — use only for corroboration
+
+---
+
+## Session Protocol
+
+### Preflight (before any research)
+1. Read person's cache: `research/cache/{ID}.json`
+2. Read person's journal: `research/journals/{ID}.md`
+3. Check `RESEARCH_PRIORITY_PLAN.md` — are research targets still accurate?
+4. Verify journal frontmatter matches tree.json (confidence, last_session, status)
+
+### During Research
+- **Write journal entries in real-time** — AI context compaction can drop mid-session work. Log platform + query + result as you go.
+- Decision Log entries: write at the moment of decision with reasoning (not reconstructed afterward)
+- Before flagging any `brick_wall=True` person as a research target: read their `validation.evidence.sources` array first. If a T1-3 source already names a parent ("daughter of", "son of", "child of"), the brick wall is a graph-wiring bug, not a research gap. Fix the tree first.
+- Before queuing any null-parent person: read `notes` field and `lineage_part`. Collateral persons (step-relatives, in-laws) have acceptable parent gaps.
+
+### Session Close
+Run the Person Completion Checklist before committing:
+```
+1. All sources attached to tree.json
+2. Journal updated with session findings
+3. Research cache updated
+4. Negative searches documented
+5. Confidence recalculated (python3 scripts/recalculate-confidence.py)
+6. Queue updated (completed items moved to completed array)
+7. RESEARCH_PRIORITY_PLAN.md updated if priorities changed
+```
+
+---
+
+## Automation Gates
+
+### What runs automatically
+- Source deduplication and tier classification
+- Confidence recalculation after each harvest batch
+- Citation standardization
+- Research session journaling
+- Queue management and priority ordering
+
+### What requires dry-run review before applying
+- Any batch write to an external platform (FS, Ancestry, WikiTree)
+- GPS remediation patches
+- Confidence downgrades
+
+### What requires human attestation
+- Conflict resolution when two high-tier sources disagree
+- Pre-1700 identity claims (European ancestry is heavily conflated in online trees)
+- WikiTree biography edits
+- Platform contributions with new parent-child relationships
+- Any merge or combination of person records on FamilySearch
+
+### Run order after bulk changes
+```
+1. gps-element1-remediate.py --apply    # exhaustive search proof
+2. gps-element2-remediate.py --apply    # citation standardization
+3. gps-compliance-report.py             # fresh GPS audit
+4. validate-tree.py --strict            # schema validation
+5. reconcile-queue.py                   # platform ID drift check
+6. recalculate-confidence.py --dry-run  # REVIEW before --apply
+7. recalculate-confidence.py --apply    # promote eligible persons
+```
+
+---
+
+## Key Gotchas
+
+### FamilySearch API
+- **CRITICAL**: `POST /platform/tree/relationships` with type "ParentChild" creates **couple** relationships regardless of the type field. This is an FS API bug. The correct endpoint for parent-child links is `POST /platform/tree/child-and-parents-relationships`.
+- CDP-extracted `fssessionid` tokens may return 404 on write endpoints that work fine with real-browser session tokens. Test before assuming CDP tokens work for any new write endpoint.
+- `GET /platform/tree/search` endpoint returns 400 errors — `q` parameter "no longer supported."
+
+### Playwright / Chrome CDP
+- `page.wait_for_timeout(N)` hangs indefinitely in CDP mode. Use `time.sleep(N/1000.0)`.
+- `ctx.new_page()` can hang after Chrome restart — use `ctx.pages[0]` if a page already exists.
+- Playwright MCP connection breaks when Chrome restarts. Plan Chrome restarts accordingly.
+- `fetch()` from browser context inherits session cookies. `page.goto()` may drop authentication state on navigation to Ancestry/FS pages.
+- For "click all matching elements": always `$$` to get all handles first, then iterate. `$` inside a loop re-finds the same element.
+- Run batch scripts with `python3 -u` for real-time output. Without it, stdout buffering hides progress.
+
+### Data Integrity
+- `gps_compliance` and `confidence` stored in tree.json can be stale after bulk operations. Run GPS report and confidence recalculation after each session.
+- Journal frontmatter (confidence, last_session, status) can drift from tree state. Check and resync at session start.
+- Siblings should be the same generation as the direct-line sibling (Gen N), not the parents' generation (Gen N-1).
+- Stored GPS/confidence fields drift from computed values after bulk operations — always recompute before committing.
+
+### Evidence Interpretation
+- Delayed birth certificates may list stepmother if biological mother died before the certificate was filed (common for certificates filed decades after birth). Cross-check against census household at birth year.
+- FAG dates without source citations are Tier 5.
+- FindAGrave: search married women by death-record surname, not maiden name.
+- Obituaries in newspaper archives (Newspapers.com, Chronicling America) = Tier 2-3 evidence for relationships. Funeral home website obits with no newspaper attribution = Tier 4.
+- Child middle names often match grandparent surnames — strong indirect evidence when paired with geographic correlation. Verify across 3+ generations.
+
+---
+
+## Pre-1700 Evidence Standards
+
+For European ancestry and any claims before 1700:
+- FamilySearch/Ancestry trees, Geneanet, and personal websites are **prohibited** as sources
+- Find the original parish registers, wills, or court records
+- Require ≥2 independent Tier 1-2 sources on both the child and the claimed parent
+- Document the evidence chain in the research journal explicitly
+
+---
+
+## Playwright MCP
+
+- **Config**: `.mcp.json` | **Secrets**: `.playwright-secrets.env` (gitignored)
+- **Chrome CDP**: `bash scripts/chrome-cdp.sh {start|stop|status|restart}`
+- **Browser deconfliction**: Chrome CDP is shared — never launch browser-using background agents while the main session uses the browser. Background agents should use REST APIs instead.
+
+---
+
+## Resource Map
+
+- `data/tree.json` — Canonical family tree data
+- `data/research_queue.json` — Research targets (active + completed arrays)
+- `research/RESEARCH_PRIORITY_PLAN.md` — Current priorities
+- `research/cache/` — Per-person platform search history
+- `research/journals/` — Per-person research journals (append-only)
+- `docs/SCHEMA.md` — Tree data schema documentation
+- `docs/SCRIPT_REFERENCE.md` — All scripts with usage
+- `docs/SESSION_HISTORY.md` — Session metrics and notes
+
+---
+
+## Lessons Reference
+
+Confirmed rules from all three sister projects: see `lessons/LESSONS.md`.
+Disputed rules: `lessons/CONTESTED.md`.
+Single-project patterns not yet confirmed: `lessons/PROVISIONAL.md`.

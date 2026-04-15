@@ -1,0 +1,381 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-genealogy/starter-kit/schema/tree.json.schema.json",
+  "title": "AI Genealogy Tree",
+  "description": "JSON Schema for the portable AI genealogy tree data model. Validates data/tree.json.",
+  "type": "object",
+  "required": ["metadata", "persons"],
+  "additionalProperties": true,
+
+  "$defs": {
+
+    "PersonId": {
+      "description": "Person identifier. Primary format is @I<digits>@. Synthetic IDs use @I_<NAME>@ or @I_FS_*@.",
+      "type": "string",
+      "pattern": "^@I"
+    },
+
+    "Event": {
+      "description": "A life event (birth, death, marriage, etc.).",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "date": {
+          "description": "Normalized date string (e.g., '1 Jan 1850', 'Abt 1850', 'Bef 1900').",
+          "type": "string"
+        },
+        "date_original": {
+          "description": "Date as it appeared in the original source, before normalization.",
+          "type": "string"
+        },
+        "place": {
+          "description": "Place as recorded (town, county, state, country).",
+          "type": "string"
+        },
+        "confidence": {
+          "description": "Confidence in the specific event data.",
+          "type": "string",
+          "enum": ["verified", "probable", "possible", "estimated"]
+        }
+      }
+    },
+
+    "Source": {
+      "description": "A single source attached to a person as evidence.",
+      "type": "object",
+      "required": [
+        "name",
+        "title",
+        "tier",
+        "platform",
+        "type",
+        "added",
+        "proves",
+        "evidence_type"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "description": "Short human-readable label for this source (e.g., '1850 US Census, Albemarle Co, VA').",
+          "type": "string"
+        },
+        "title": {
+          "description": "Full title of the source collection or record.",
+          "type": "string"
+        },
+        "tier": {
+          "description": "Source quality tier: 1=Official records/vital, 2=Census/church registers, 3=Published genealogies, 4=Oral history/derivative, 5=Online trees (leads only).",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "platform": {
+          "description": "Platform or repository where this source was found (e.g., 'FamilySearch', 'Ancestry', 'WikiTree', 'FHL').",
+          "type": "string"
+        },
+        "type": {
+          "description": "Record type (e.g., 'census', 'vital', 'church', 'probate', 'newspaper', 'tree').",
+          "type": "string"
+        },
+        "added": {
+          "description": "ISO 8601 date when this source was attached (e.g., '2025-03-15').",
+          "type": "string"
+        },
+        "proves": {
+          "description": "What fact this source establishes (e.g., 'birth 1850 Virginia', 'father John Smith').",
+          "type": "string"
+        },
+        "evidence_type": {
+          "description": "Direct evidence names the fact explicitly; indirect requires inference; negative records absence.",
+          "type": "string",
+          "enum": ["direct", "indirect", "negative"]
+        },
+        "ark": {
+          "description": "Persistent ARK URL linking to the digitized record (preferred) or source page.",
+          "type": "string"
+        },
+        "url": {
+          "description": "URL to the source record (use 'ark' for FamilySearch ARK links).",
+          "type": "string"
+        },
+        "citation": {
+          "description": "Full formatted citation string.",
+          "type": "string"
+        }
+      }
+    },
+
+    "Validation": {
+      "description": "Research quality metadata for a person.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "confidence": {
+          "description": "Canonical confidence level. VERIFIED=well-sourced; PROBABLE=probably correct; POSSIBLE=plausible but weakly sourced; UNVERIFIED=data quality flag.",
+          "type": "string",
+          "enum": ["VERIFIED", "PROBABLE", "POSSIBLE", "UNVERIFIED"]
+        },
+        "source_count": {
+          "description": "Must equal len(evidence.sources). Maintained for quick access without iterating sources.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "concerns": {
+          "description": "List of open research concerns. Prefix with 'RESOLVED: ' to close a concern.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "corrections_applied": {
+          "description": "Log of corrections made to this person's data (append-only).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dna_evidence": {
+          "description": "If set, DNA confirmation protects this person from automated confidence demotion.",
+          "type": ["string", "null"]
+        },
+        "parent_confidence": {
+          "description": "Per-parent confidence metadata (father/mother keys with source lists).",
+          "type": "object",
+          "additionalProperties": true
+        },
+        "gps_status": {
+          "description": "Genealogical Proof Standard compliance: COMPLIANT, PARTIAL, or NOT_EVALUATED.",
+          "type": "string",
+          "enum": ["COMPLIANT", "PARTIAL", "NOT_EVALUATED"]
+        },
+        "evidence": {
+          "description": "Container for source list and evidence metadata.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "source_count": {
+              "description": "Must equal len(sources). Redundant with validation.source_count for legacy reasons.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "sources": {
+              "description": "All sources attached to this person as evidence.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Source"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "ResearchStatus": {
+      "description": "Research completeness tracking for a person.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "status": {
+          "description": "Overall research status string (e.g., 'RESEARCHED', 'IN_PROGRESS', 'NOT_STARTED').",
+          "type": "string"
+        },
+        "parents_known": {
+          "description": "Whether both parents have been identified.",
+          "type": ["boolean", "null"]
+        },
+        "brick_wall": {
+          "description": "True if further research has been exhausted with no parent found.",
+          "type": ["boolean", "null"]
+        },
+        "brick_wall_reason": {
+          "description": "Explanation of why the line cannot be extended further.",
+          "type": ["string", "null"]
+        },
+        "archive_needed": {
+          "description": "True if offline archive / onsite research is required.",
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+
+    "Person": {
+      "description": "A single ancestor, descendant, or collateral person in the tree.",
+      "type": "object",
+      "required": ["id", "canonical_name", "gender", "generation"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/PersonId",
+          "description": "Unique person identifier within this tree."
+        },
+        "canonical_name": {
+          "description": "Full name in preferred research form (e.g., 'John SMITH').",
+          "type": "string",
+          "minLength": 1
+        },
+        "gender": {
+          "description": "M=male, F=female, U=unknown.",
+          "type": "string",
+          "enum": ["M", "F", "U"]
+        },
+        "generation": {
+          "description": "Ahnentafel generation number. Generation 1 = primary subject; each generation back doubles.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "birth": {
+          "description": "Birth event.",
+          "$ref": "#/$defs/Event"
+        },
+        "death": {
+          "description": "Death event.",
+          "$ref": "#/$defs/Event"
+        },
+        "father_id": {
+          "description": "ID of this person's father in the tree, or null if unknown.",
+          "oneOf": [
+            { "$ref": "#/$defs/PersonId" },
+            { "type": "null" }
+          ]
+        },
+        "mother_id": {
+          "description": "ID of this person's mother in the tree, or null if unknown.",
+          "oneOf": [
+            { "$ref": "#/$defs/PersonId" },
+            { "type": "null" }
+          ]
+        },
+        "spouse_ids": {
+          "description": "List of spouse IDs.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PersonId"
+          }
+        },
+        "child_ids": {
+          "description": "List of child IDs.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PersonId"
+          }
+        },
+        "platform_ids": {
+          "description": "Cross-platform identifiers for this person.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "familysearch": {
+              "description": "FamilySearch person ID (e.g., 'LH7S-R3T').",
+              "type": "string"
+            },
+            "wikitree": {
+              "description": "WikiTree profile ID (e.g., 'Smith-1234').",
+              "type": "string"
+            },
+            "gedcom": {
+              "description": "GEDCOM export ID.",
+              "type": "string"
+            },
+            "findagrave": {
+              "description": "Find A Grave memorial ID.",
+              "type": "string"
+            },
+            "ancestry": {
+              "description": "Ancestry.com person ID.",
+              "type": "string"
+            },
+            "geni": {
+              "description": "Geni.com profile ID.",
+              "type": "string"
+            }
+          }
+        },
+        "validation": {
+          "$ref": "#/$defs/Validation"
+        },
+        "research_status": {
+          "$ref": "#/$defs/ResearchStatus"
+        },
+        "lineage_part": {
+          "description": "Which branch of the pedigree this person belongs to (1–16 for a 4-generation pedigree). Null for collateral persons.",
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16
+            },
+            { "type": "null" }
+          ]
+        },
+        "notes": {
+          "description": "Free-text research notes for this person.",
+          "type": "string"
+        },
+        "name_variants": {
+          "description": "Alternate spellings or forms of the name found in records.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confidence": {
+          "description": "LEGACY field. The canonical confidence is validation.confidence. This top-level field is present on a small number of older records and should not be written to.",
+          "type": "string",
+          "enum": ["VERIFIED", "PROBABLE", "POSSIBLE", "UNVERIFIED"]
+        }
+      }
+    }
+  },
+
+  "properties": {
+    "metadata": {
+      "description": "Tree-level metadata.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "title": {
+          "description": "Human-readable title for the tree (e.g., 'Wiley Family Tree').",
+          "type": "string"
+        },
+        "created": {
+          "description": "ISO 8601 date/datetime when the tree file was first created.",
+          "type": "string"
+        },
+        "last_updated": {
+          "description": "ISO 8601 date/datetime of the most recent modification.",
+          "type": "string"
+        },
+        "primary_person_id": {
+          "description": "ID of the primary subject of the tree (the proband).",
+          "type": "string"
+        },
+        "person_count": {
+          "description": "Declared number of persons (for quick reference; may differ from actual list length).",
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema_version": {
+          "description": "Version of this data model schema.",
+          "type": "string"
+        }
+      }
+    },
+
+    "persons": {
+      "description": "All persons in the tree as a flat list (not a dict). Iterate with: for p in tree['persons'].",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Person"
+      }
+    },
+
+    "relationships": {
+      "description": "Optional explicit relationship records (e.g., for non-biological or complex relationships).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  }
+}
