@@ -97,7 +97,7 @@ For disputed rules, see [CONTESTED.md](CONTESTED.md).
 
 **Rule [CONFIRMED ×3]: `page.wait_for_timeout()` hangs indefinitely in CDP mode.** Replace all `page.wait_for_timeout(N)` calls with `time.sleep(N/1000.0)`. Pure Python stdlib sleep is OS-level and cannot be stalled by the Playwright event loop or Chrome state.
 
-**Rule [CONFIRMED ×3]: `ctx.new_page()` can hang after Chrome restart.** Use `ctx.pages[0]` if a page already exists; only call `ctx.new_page()` when no pages exist.
+**Rule [CONFIRMED ×3]: `ctx.new_page()` can hang after Chrome restart.** Use `ctx.pages[0]` if a page already exists; only call `ctx.new_page()` when no pages exist. *Refinement (genealogy, 2026-04-18)*: when running an automated posting script concurrently with an active Playwright MCP session, `pages[0]` is occupied by MCP and must not be clobbered — use `new_page()` instead. The restart-hang scenario only applies when the context has no pages; if pages exist, `new_page()` is safe and preferable for isolation.
 
 **Rule [CONFIRMED ×3]: Playwright MCP connection breaks when Chrome restarts.** The MCP server holds a WebSocket connection established at startup. Chrome restart creates a new WebSocket URL; the old connection dies and does not auto-heal. Plan Chrome restarts accordingly — Playwright tools are unavailable for the rest of the session after a restart.
 

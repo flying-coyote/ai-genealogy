@@ -77,3 +77,53 @@ In Chrome CDP sessions, `fetch()` calls from browser context inherit session coo
 Extending lineage beyond Gen 15 (pre-1600) requires ≥2 Tier 1-2 sources on both the child and the parent. Even if FS has parents listed for a Gen 16 person, the parents may have only Tier 5 community-tree sourcing. The dispatcher's `PRE_1700_GEN_THRESHOLD` enforces a stricter evidence filter at deeper generations. This architectural decision reflects that pre-1600 FamilySearch profiles are heavily conflated across community contributions.
 
 **Needs confirmation in**: genealogy-kindred, dry-cross
+
+---
+
+## WikiTree contribution queue: filter pre-1700 at build time
+
+**Source**: genealogy (2026-04-18)
+
+WikiTree locks pre-1700 profiles behind a Pre-Genealogical Merit (PGM) project badge. Building a WT contribution queue without filtering birth year < 1700 (or generation > 15 when birth year is unknown) makes the majority of a deep pedigree queue unusable — 833 of 1,293 WT profiles in the Kurby tree were pre-1700. The rebuild script (`rebuild-wt-queue.py`) now enforces this filter. Attempting to edit a pre-1700 profile via the edit page returns a "This profile is protected" message with no textarea.
+
+**Needs confirmation in**: genealogy-kindred, dry-cross
+
+---
+
+## WikiTree: additive bio injection for stale prepared edits
+
+**Source**: genealogy (2026-04-18)
+
+A prepared WT edit bio goes stale when other contributors enrich the live profile between the time the edit was prepared and the time it is posted. If the prepared bio is materially shorter than the current live bio (threshold: prepared < current - 200 chars), applying it as a full replacement causes a regression — stripping enrichment the community added. The correct strategy: extract new `<ref name="...">...</ref>` blocks from the prepared bio that aren't already present in the current bio (match by `name` attribute), then inject them immediately before `<references />` in the live bio. If there are no new refs to inject, skip and remove the prepared file. Implemented in `wt-playwright-post.py` via `_extract_new_refs()` + `_inject_refs_into_bio()`.
+
+**Needs confirmation in**: genealogy-kindred, dry-cross
+
+---
+
+## WikiTree CDP posting: `wait_until="networkidle"` required for textarea read
+
+**Source**: genealogy (2026-04-18)
+
+When navigating to the WT edit page (`?action=edit`) via Playwright CDP and then reading `#wpTextbox1.value`, using `wait_until="domcontentloaded"` causes `Execution context was destroyed` errors — the page is still rendering when the query fires. `wait_until="networkidle"` waits until all XHR/fetch activity settles and reliably yields a populated textarea. Use `networkidle` for any WT edit page read in Playwright scripts.
+
+**Needs confirmation in**: genealogy-kindred, dry-cross
+
+---
+
+## WikiTree CDP posting: `context.new_page()` for tab isolation
+
+**Source**: genealogy (2026-04-18)
+
+When using Chrome CDP with an active Playwright MCP session (which occupies pages[0]), automated posting scripts must call `context.new_page()` to get an isolated tab — using `pages[0]` directly clobbers the active MCP tab and disrupts the user's browser session. This is a refinement of the existing LESSONS.md rule ("use `pages[0]` after Chrome restart") — that rule targets restart-hang prevention; this rule targets concurrent MCP + script isolation. The two scenarios are mutually exclusive: after a restart there are no existing pages, so `new_page()` and `pages[0]` are equivalent.
+
+**Needs confirmation in**: genealogy-kindred, dry-cross
+
+---
+
+## Canonical name in tree.json can diverge from WT profile identity
+
+**Source**: genealogy (2026-04-18)
+
+WT ID assignment is an identity-match operation, not a name-sync operation. A person's canonical name in tree.json may be incorrect while their assigned WT ID is correct. Primary sources are authoritative for name: if 50+ Tier 1-2 sources consistently identify a person as "Matthew Grant" but tree.json has "William Grant", the name in tree.json is the error — not the WT ID. When researching a blocked_mismatch queue item, check source text before concluding the WT ID is wrong. Name correction is a separate step from platform ID assignment and requires a `data_correction` contribution_log entry.
+
+**Needs confirmation in**: genealogy-kindred, dry-cross
