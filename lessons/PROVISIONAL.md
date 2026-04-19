@@ -184,3 +184,80 @@ In dry-cross, 510 persons ended up stored +1 off canonical shortest-path-to-Chri
 **Recovery**: surgical fix requires per-person path enumeration to avoid corrupting legitimate convergence anchors (some Martin ancestors also appear via Cross/Smith paths through deep convergence). Simple bulk decrement creates new bad edges.
 
 **Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## FS `/platform/records/search` endpoint returns 404 — deprecated
+
+**Source**: genealogy (2026-04-19)
+
+The record-level search API `GET /platform/records/search?q=<query>` at `api.familysearch.org` returns HTTP 404 regardless of query params or auth. Confirmed in the Gen 9-11 weak-target research batch where a Sonnet agent tested all documented parameter combinations. No known alternative bulk record discovery path remains via API alone.
+
+Effect on pipelines: any automation that attempted record-level search (rather than per-person `/platform/tree/persons/{PID}/sources`) now needs to either (a) use the FS Full-Text Search API for handwritten record OCR, or (b) accept manual browser-driven search for record discovery. The documented URL works in a browser at `www.familysearch.org/search/record/results?q=...` but the API path is gone.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## FS HTTP 204 on persons/{PID}/sources — GEDCOM-import profiles have zero attached sources
+
+**Source**: genealogy (2026-04-19)
+
+When `GET /platform/tree/persons/{PID}/sources` returns HTTP 204 (no content), the profile exists on FamilySearch but has no sources attached. In the genealogy Gen 9-11 batch, **15 of 25 FS-ID targets returned 204** — these profiles were created by mass GEDCOM import without source attachment. This is the normal state for the majority of collateral/deep-ancestor profiles on FS, not an error condition.
+
+Operational implications:
+- Don't treat 204 as a retry candidate; it is the final answer for that profile in the API.
+- The "correct" fix is not code — it is either (a) attaching sources from tree.json via `batch-fs-source-attach.py` or (b) accepting the profile is source-sparse and pursuing records via archive paths.
+- If a harvest script reports "profiles checked: N, new sources found: 0", 204 responses are the dominant reason at Gen 9+.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## WikiTree account blocks are durable and account-wide, not action-scoped
+
+**Source**: genealogy (2026-04-19)
+
+When a WikiTree account triggers Error 2562 (automation rate limiting), the block persists for **48+ days** and applies to *every* action on that account — UI edits, API reads, and logins all fail with Error 2562 or `?errcode=blocked`. Observed pattern for Wiley-6910 (tree manager account for ~165 profiles): block initiated 2026-03-02 after ~993 automated edits in 5 days; 48 days later (2026-04-19) still blocked. Contact with `info@wikitree.com` has not yielded resolution.
+
+Mitigation adopted: use a separate account (Wiley-6998) assigned to a mentor (Lukas Murphy), with all edits via browser UI (no automation) at ≤50/day / ≥120s min-delay / ≤8/30min burst. Rate limiter script: `scripts/wt-rate-check.py` with shared lockfile `~/.wikitree-contribution-log.jsonl` across all sister projects.
+
+Implication: any automation architecture must assume blocks are irrecoverable and plan for clean-account rotation rather than trying to unblock.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Loop-research saturates at Gen 49 (Merovingian frontier) on FS-Tier-5 parents
+
+**Source**: genealogy (2026-04-19)
+
+The recursive parent-extension loop (`scripts/loop-research-dispatch.py`) drains at the Gen 49 Merovingian dynasty frontier. Beyond Gen 49 on the Kurby Wiley tree, FS profiles for claimed parents are either (a) absent (profile not on FS), (b) Tier-5-only (patron-submitted trees, not attachable per our T5 external rule), or (c) present with zero sources (HTTP 204 pattern above).
+
+At that frontier, further extension requires:
+- Scholarly genealogies (Settipani, Medieval Lands Project) — usually paywalled or subscription-only
+- Primary records (chronicles, annals, royal charters) — archive access required
+- Aristocratic lineage studies — not a pure-API path
+
+Operational rule: once `loop-research-dispatch.py` exits code 2 (queue drained) twice in succession on the same tree, do not restart. The queue is not going to refill itself; the remaining frontier is ONSITE research.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Weak-person FS ID mismatch gate — ~36% of untriaged FS IDs fail identity check
+
+**Source**: genealogy (2026-04-19)
+
+In a Gen 9-11 weak-target audit (25 persons with FS IDs but POSSIBLE/UNVERIFIED confidence), **9 of 25 failed the identity gate**: either the birth year differed by >3 years, the birth country differed, or descendancy was time-impossible (e.g., FS profile death pre-dates subject's required existence). This suggests that for persons with weak-confidence + FS IDs assigned via GEDCOM bulk import, roughly 1 in 3 FS IDs are *wrong*, not merely under-sourced.
+
+Recommended gate (applied in the April 2026 batch):
+- Name overlap: ≥2 normalized tokens (excludes titles)
+- Birth year: within ±3 years (tighten to ±1 when both dates have source attribution)
+- Spouse match: ≥1 spouse-name token overlap OR spouse absent both sides
+- Country match: required for pre-1900 persons
+- Descendancy check: subject's required life window must overlap with FS lifespan
+
+Persons failing the gate should have the FS ID *removed* rather than sources attached. Attaching records to the wrong profile compounds the error and propagates to child/spouse profiles via FS's relationship links.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross

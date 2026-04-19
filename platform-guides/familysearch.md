@@ -211,3 +211,22 @@ Removing wrong parents first leaves the person parentless mid-edit and can trigg
 | Programmatic refresh | Not available | Not available |
 
 When a write operation returns 404 unexpectedly, the first thing to check is whether the token came from CDP vs. an active browser session.
+
+---
+
+## Broken bulk record search — `/platform/records/search?q=<query>`
+
+The bare record-level search `GET /platform/records/search?q=<query>` returns HTTP 404 on `api.familysearch.org` regardless of parameters or auth. This is distinct from the Full-Text Search API (`q.textAvailable=true&q.fullText=...`) which still works. Confirmed 2026-04-19 in the genealogy Gen 9-11 weak-target batch.
+
+If a pipeline needs record discovery by surname/date, prefer:
+1. Full-Text Search API (handwritten OCR) for pre-1856 Southern records
+2. Browser-driven record search at `www.familysearch.org/search/record/results?q=...`
+3. Per-person sources via `/platform/tree/persons/{PID}/sources` (if an FS ID is known)
+
+---
+
+## `/persons/{PID}/sources` returning HTTP 204
+
+An FS profile returning HTTP 204 on the sources endpoint is not an error — it is the canonical response for profiles with zero attached sources. For weak-confidence targets (POSSIBLE/UNVERIFIED), a ~60% 204 rate is normal (GEDCOM-imported profiles without source attachment). Don't retry 204s; they are final.
+
+Downstream: a harvest that reports "profiles checked: 500, new sources found: 20" at Gen 9+ is behaving correctly; the remaining 480 profiles are simply source-sparse on FS. Pursue records via archive paths (ONSITE backlog), not via retry.
