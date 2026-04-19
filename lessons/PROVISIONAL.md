@@ -127,3 +127,60 @@ When using Chrome CDP with an active Playwright MCP session (which occupies page
 WT ID assignment is an identity-match operation, not a name-sync operation. A person's canonical name in tree.json may be incorrect while their assigned WT ID is correct. Primary sources are authoritative for name: if 50+ Tier 1-2 sources consistently identify a person as "Matthew Grant" but tree.json has "William Grant", the name in tree.json is the error — not the WT ID. When researching a blocked_mismatch queue item, check source text before concluding the WT ID is wrong. Name correction is a separate step from platform ID assignment and requires a `data_correction` contribution_log entry.
 
 **Needs confirmation in**: genealogy-kindred, dry-cross
+
+---
+
+## Convergence-aware generation validator: `parent.gen != child.gen + 1` is WARN when parent has 2+ children at different gens
+
+**Source**: dry-cross (2026-04-19)
+
+Multi-lineage convergence (primary descendant reaching a deep ancestor via multiple paths of different lengths) is a real phenomenon in a well-researched tree — e.g. Shell convergence, Howard triple descent. A strict `parent.gen == child.gen + 1` rule treats these as errors. The convergence-aware variant detects them: if an ancestor has two or more children stored at different `generation` values, the diff != 1 at each child is a convergence artifact (WARN). Everything else is ERROR. This distinguishes documented multi-lineage descent from actual import bugs. See `scripts/validate-tree.py` step `[5/5]` in dry-cross.
+
+```python
+convergence_ancestors = {pid for pid, gens in parent_child_gens.items() if len(gens) > 1}
+# For each parent-child edge with diff != 1:
+#   if parent in convergence_ancestors → WARN
+#   else → ERROR
+```
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Background-script checkpoints: persist after every item, not at batch end
+
+**Source**: dry-cross (2026-04-19)
+
+Long-running batch scripts (e.g. Playwright triage of 50+ items, bulk API harvests) should save their progress file after each completed item, not accumulate results in memory for a single end-of-batch write. When the browser or API crashes mid-batch (common with Playwright `Execution context was destroyed` or token expiry), all completed work is lost otherwise. Pattern:
+
+```python
+for item in batch:
+    try:
+        result = process(item)
+        log['sessions'][-1]['items'].append(result)
+        save_log(log)          # ← every iteration, not outside the loop
+    except Exception as e:
+        log['sessions'][-1]['errors'].append({"item": item['id'], "error": str(e)})
+        save_log(log)
+        continue               # ← don't let one bad item kill the batch
+```
+
+In dry-cross `scripts/ancestry-auto-triage.py` commit `8f8bfe0`, this pattern converted "lose 10 accepts on crash" into "lose the one failing item; everything else preserved." Verified against the exact `query_selector_all` crash that motivated the patch.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Hardcoded-generation anti-pattern in bulk-add scripts
+
+**Source**: dry-cross (2026-04-19)
+
+Scripts that write `"generation": N` as a hardcoded literal (e.g. `add-generation.py`, `add-gen7-persons.py`) introduce systematic gen-offset bugs at import boundaries. When a user manually adds a new ancestor at their "intuitive" gen number (e.g. "this is my great-grandfather's great-grandfather, so Gen 7") without computing from the existing child's stored gen, any off-by-one error cascades through all previously-imported ancestors of that person.
+
+In dry-cross, 510 persons ended up stored +1 off canonical shortest-path-to-Christy because @I711@ Miles Grady Martin was inserted at `"generation": 5` while his child @I4@ Mary Blanche Martin was at 3 (should be parent=4). The offset compounded through all 77 Martin ancestors, plus 376 Sanders ancestors after @I712@ was inserted similarly, plus 3 Griffith ancestors inserted 2026-04-19. The validator's strict diff=1 check only fires at 2 boundary edges; the 508 internal edges all have diff=1 because everyone is equally wrong.
+
+**Mitigation**: always compute `generation = persons[child_id]["generation"] + 1` (or the inverse when adding children). Fail loudly if child has no generation rather than silently picking a literal.
+
+**Recovery**: surgical fix requires per-person path enumeration to avoid corrupting legitimate convergence anchors (some Martin ancestors also appear via Cross/Smith paths through deep convergence). Simple bulk decrement creates new bad edges.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
