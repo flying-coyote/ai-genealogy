@@ -206,6 +206,29 @@ The fix is a one-line sync: `p["confidence"] = p["validation"]["confidence"]` ap
 
 ---
 
+## Bio generators must validate sources, not just iterate them
+
+**Source**: dry-cross (2026-04-19)
+
+Scripts that generate WikiTree biography text from tree.json (`gen-wikitree-bios.py`) typically trust every source already attached to a person. This makes them amplifiers of any upstream harvest errors: if a bulk FS harvest attached a "Benjamin Cross, Kentucky Deaths, 1911-1967" record to Daniel Putnam Cross (d.1863 VA) because both were named Cross, the bio generator will emit `<ref>` markup for it and the user will post a citation that fabricates the person's death record on WikiTree.
+
+In dry-cross, an audit of 82 pre-staged remediation bios found **52 (63%)** contained refs whose quoted indexed-record names didn't match the target person. Posting them would have polluted WT with wrong records and risked re-triggering Error 2562 (excessive edit velocity caught on top of low-quality edits).
+
+Defense: before including a source in generated bio text, validate it. The source title from FS harvests has the shape `'<target-name>, "<indexed-name>, "<collection>""'`. Parse, then check:
+
+1. **Name match**: indexed name must share the target's surname AND (first name OR fuzzy 4-char-prefix of first name). Handles abbreviated variants ("Richd"↔"Richard") and surname-only captures ("Cross" alone).
+2. **Anonymous filter**: indexed names that are only honorifics (Mr, Mrs, Miss, Dr) + no real first-name token reject outright.
+3. **Era overlap**: if collection title has a year range, require overlap with `[birth_year-5, death_year+5]`. A 1928-1943 Georgia Deaths collection attached to a 1863 Virginia death is a false positive regardless of name similarity.
+4. **Tier 5 online trees**: exclude from bio citations (they propagate themselves, not evidence).
+
+Drop persons who end up with <2 clean sources (posting a thin bio with recycled stubs adds little value).
+
+Reference: dry-cross `scripts/rebuild-wt-bio-queue.py` (82 → 53 bios, 290 clean refs, avg 5.5/bio).
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
 ## FS `/platform/records/search` endpoint returns 404 — deprecated
 
 **Source**: genealogy (2026-04-19)
