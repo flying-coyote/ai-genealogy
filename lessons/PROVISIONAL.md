@@ -187,6 +187,25 @@ In dry-cross, 510 persons ended up stored +1 off canonical shortest-path-to-Chri
 
 ---
 
+## Top-level `confidence` field drift from `validation.confidence`
+
+**Source**: dry-cross (2026-04-19)
+
+When tree.json persons store confidence at two locations — a top-level `confidence` field and a nested `validation.confidence` field — the two drift apart over time. In dry-cross:
+
+- `recalculate-confidence.py` (the canonical maintainer) only touches `validation.confidence`; the top-level field is never updated
+- Bulk import scripts (e.g. `sibling-seed` additions 2026-04-18) populate `validation.confidence` but leave the top-level field null
+- Downstream readers (journals, research scripts) sometimes pull from whichever field they happen to reach, producing inconsistent UI/reports
+- In dry-cross: 110 persons had drifted values, 589 had null top-level — 21% of the tree was out of sync
+
+The fix is a one-line sync: `p["confidence"] = p["validation"]["confidence"]` applied tree-wide. No upgrade or downgrade in classification results — this is pure denormalization cleanup. But the pattern is insidious: the two fields look identical on casual inspection, so drift goes unnoticed until an audit compares them explicitly. See `scripts/audit-confidence-upgrades.py --sync-top` in dry-cross.
+
+**Prevention**: either (a) store confidence in one place only (`validation.confidence` is conventional), (b) have `recalculate-confidence.py` update both, or (c) add a pre-commit check that flags drift > 0. Don't rely on field readers to defensively check both locations — they won't.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
 ## FS `/platform/records/search` endpoint returns 404 — deprecated
 
 **Source**: genealogy (2026-04-19)
