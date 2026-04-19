@@ -177,3 +177,40 @@ WikiTree API "Access disallowed" errors can occur at the account level, independ
 - API block: API calls return "Access disallowed" regardless of authentication
 
 If API access is blocked, contact `info@wikitree.com`. UI-unblocked accounts may still have API-blocked status; these are resolved separately.
+
+---
+
+## Account blocking: duration and scope (2026-04-19)
+
+When a WikiTree account triggers Error 2562 (automation rate limit), the block is both **durable** (48+ days observed) and **account-wide** (UI + API + login all fail). The account manager's identity does not transfer; blocked accounts cannot be recovered by a clean login from a new IP or session.
+
+**Observed case**: Wiley-6910 (kurbyewiley@gmail.com) blocked 2026-03-02 after ~993 automated edits in 5 days. As of 2026-04-19 (day 48), still returns Error 2562 on every action. Email to `info@wikitree.com` did not yield recovery.
+
+**Mitigation pattern**: use a secondary account for contributions (Wiley-6998 in the genealogy project), assigned to a mentor for supervision, with all edits via browser UI (no automation). Enforce per-account rate limits:
+- 50 edits/day
+- 150 edits/rolling-7-days
+- ≥120s minimum between edits
+- ≤8 edits per 30-minute window
+
+Shared lockfile pattern: `~/.wikitree-contribution-log.jsonl` enforced by `scripts/wt-rate-check.py`. This is account-agnostic — protects the whole family of sister-project accounts using the same IP.
+
+---
+
+## Mentor-guided citation format
+
+Per guidance from mentor Lukas Murphy (2026-04-11) on the Wiley-6998 account, WikiTree profiles should use inline `<ref>` citations with the format:
+
+```wiki
+Phillip Brogan was born about 1740 in Virginia.<ref name="brogan_families">Daniel S. Brogan, "The Brogan Families of Early America" (2011, revised 2022).</ref>
+```
+
+Pattern:
+- One fact → one `<ref>` tag
+- Title in quotes, publisher in italics (`''Publisher''`) when applicable
+- Use FamilySearch ARK URLs when citing FS records
+- FS source pages provide copy-paste-ready citation strings — prefer those over hand-written variants
+- Profile prose is about the PERSON, not cross-family narrative connecting tree branches
+
+Example profile for reference style: Reffitt-189 (timeline style), Rose Marie Clooney (narrative style).
+
+Non-standard headers to avoid: `=== Additional Records ===`, `=== Cross-Platform Profile Links ===` — these are not WikiTree idiomatic.
