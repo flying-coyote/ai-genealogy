@@ -500,3 +500,27 @@ In genealogy: Mary Claibourne (@I132588597835@) shows `birth.date = "1830"` `dat
 **Detection**: scan tree.json for persons where `(birth.date_source == "Geni-API")` and `(child_birth_min - person.birth < 15)` for any child. Flag for correction against primary records.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## anachronism-auto-strip misfires on English/Scottish county names
+
+**Source**: genealogy (2026-04-20)
+
+The `anachronism-auto-strip` validation helper compares birth places against US-county organization dates — but does not distinguish between an English or Scottish county/town and its later American namesake. Result: a 1604 birth in **Carlisle, Cumberland, England** gets flagged as anachronistic because "Cumberland County organized 1749" (meaning PA/VA/NJ). Same pattern hit all 8 persons in the 2026-04-20 B2 anachronism queue:
+
+| Flagged place | Real location | US namesake confused with |
+|---|---|---|
+| Deritend, Warwick, England | Warwickshire (pre-Domesday) | Warwick County, VA 1634 |
+| Carlisle, Cumberland, England | Cumberland (pre-Norman) | Cumberland Co PA 1750, VA 1749, NJ 1748 |
+| Loudoun, Ayrshire, Scotland | Loudoun barony 1300s | Loudoun Co VA 1757 |
+| Hurstmonceaux, Sussex, England | Sussex kingdom 477 AD | Sussex Co VA 1754, DE, NJ |
+| Lynn, Norfolk, England | Norfolk shire pre-Domesday | Norfolk Co MA 1793, VA 1691 |
+| Halifax, Yorkshire, England (×2) | Halifax 12th-century minster | Halifax Co VA 1752, NC |
+| Berkeswell, Warwickshire, England | Berkswell Domesday 1086 | Warwick Co VA 1634 |
+
+All 8 flags were false positives. Decision: KEEP_UNVERIFIED on each (separate-grounds rationale) and flag the script for remediation.
+
+**Fix direction**: the auto-strip should gate on country + prefer the highest-resolution country-match. If the place string contains "England" / "Scotland" / "Wales" / "Ireland", US-county dates are irrelevant.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
