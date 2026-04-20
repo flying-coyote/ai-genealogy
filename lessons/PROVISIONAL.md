@@ -394,3 +394,77 @@ In genealogy: 831 defects surfaced across 884 direct-line Gen 12-15 weak persons
 Agent can run in background (fire and notify on completion) while primary session handles browser-based tasks in parallel.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## ISO date field drift from date_original free-text
+
+**Source**: dry-cross (2026-04-20)
+
+tree.json stores dates in two fields: `birth.date` (ISO `YYYY-MM-DD`) and `birth.date_original` (free text the researcher typed). These can drift under import bugs. In dry-cross @I32@ Adam Robinson: `date = "1807-01-18"` (January 18) while `date_original = "18 Jul 1807"` (July 18). Same day number, wrong month — classic DD/MM swap during GEDCOM parsing.
+
+Detect with: for each person with both fields, parse both to (y, m, d) tuples. Flag when year matches but month/day disagree. The ISO field is usually wrong (imports lose information; hand-typed originals retain it).
+
+```python
+import re
+def year_month_day(s):
+    m = re.search(r'\b(\d{1,2})\s+(\w+)\s+(\d{4})\b', s or '')  # "18 Jul 1807"
+    if m:
+        d, mon_name, y = m.groups()
+        mon = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12}
+        mm = mon.get(mon_name[:3].lower())
+        return (int(y), mm, int(d)) if mm else None
+    return None
+```
+
+Fix: overwrite `date` from the parsed `date_original`. Audit log in contribution_log.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Find A Grave + cemetery cluster overrides unsourced tree date
+
+**Source**: dry-cross (2026-04-20)
+
+When a tree person has a stored death date with null-source or tree-only evidence (confidence VERIFIED without any T1-2 attestation), a Find A Grave memorial documenting a different date — WITH a matching family cluster (parents + spouse + ≥3 named children) and burial cemetery record — becomes stronger T2-3 evidence than the unsourced tree value.
+
+In dry-cross: Adam Robinson (@I32@) stored with `death = 1891-05-01` and no citation; FAG memorial 45599098 documents death 12 May 1896 aged 88 at New Hope Methodist Cemetery, Lawrenceville GA, with family cluster matching our tree's parents + spouse + 5 of our known children. Correction applied: `1891-05-01 → 1896-05-12`.
+
+**Safety rule**: FAG alone (T3) is not sufficient to overwrite a sourced tree date. FAG + cemetery name + matching family cluster elevates to T2 equivalence and CAN overwrite unsourced tree data, with the correction tracked in contribution_log and a narrative note in the bio explaining the change for future researchers.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Wrong-person census attachment: surname + city/county mismatch filter
+
+**Source**: dry-cross (2026-04-20)
+
+FS and Ancestry hint engines frequently attach census records to tree persons based on first+last name match WITHOUT validating location or life span. In dry-cross: Adam Robinson (Gwinnett Co GA, d.1896) had 1900 US Census + 1910 Polk Co GA census attached — both impossible (dead by 1896). Community bios inherited these and cited them as evidence. One of the 1910 entries indexed under "James A. Robinson" was actually Adam's son (different person).
+
+Defense: in bio-generation validators, reject census records whose census year falls outside `[birth_year-5, death_year+1]`. Additionally: if you know the person's lifetime residence county, drop census entries from different counties unless you have corroborating evidence of migration.
+
+**Prevention**: on each bio post, scan refs for census entries and cross-check date+location against tree data. Flag mismatches for the researcher to investigate (could be a genuine wrong-person false positive OR a real migration event).
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Additive bio merge when current bio has >200 chars of narrative
+
+**Source**: dry-cross (2026-04-20) — refinement of earlier genealogy lesson.
+
+The existing genealogy-project lesson ("WikiTree: additive bio injection for stale prepared edits") targets `<ref>` deduplication. dry-cross extends it: when the current WT bio contains community-contributed narrative text (not just refs — things like census transcriptions, biographical notes, family lore), replacing with a prepared bio strips that enrichment.
+
+Triage the merge strategy by current bio length:
+
+| Current length | Strategy |
+|----------------|----------|
+| < 200 chars (stub + URLs) | Full replace |
+| 200-500 chars (parents + dates + URLs) | Full replace with careful preservation of `{{templates}}` and `[[Category:...]]` lines |
+| 500+ chars (community narrative content) | ADDITIVE: keep existing text, add refs + narrative in new subsections like `=== Census transcriptions ===` |
+
+In dry-cross example: Draughon-300 had 901 chars of community census transcriptions; bio was merged additively, growing to 2439 chars. Cross-9834 had 414 chars (stub + 3 external URLs); full replaced to 1548 chars preserving `[[Category]]` lines + `{{One Name Study}}` template.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
