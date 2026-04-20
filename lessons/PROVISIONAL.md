@@ -468,3 +468,35 @@ Triage the merge strategy by current bio length:
 In dry-cross example: Draughon-300 had 901 chars of community census transcriptions; bio was merged additively, growing to 2439 chars. Cross-9834 had 414 chars (stub + 3 external URLs); full replaced to 1548 chars preserving `[[Category]]` lines + `{{One Name Study}}` template.
 
 **Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Spouse-bridge reconnect requires age-plausibility gate + journal check
+
+**Source**: genealogy (2026-04-20)
+
+When reconnecting a disconnected person (spouse is reachable in tree) as the parent of the reachable spouse's child, the auto-link pass MUST check:
+
+1. **Mother's age at child's birth** — if birth years known, verify `child_birth - mother_birth ∈ [15, 50]`. Outside this range, REJECT.
+2. **Journal history** — search the existing child's journal for prior parent-link removals. A parent that was explicitly removed in a past session (with reason documented) should not be silently re-added.
+3. **Place compatibility** — both parents and child should be in the same country at minimum. Cross-continental spouse-bridge links (e.g., Polish ancestor + Virginia wife) are usually GEDCOM-import artifacts, not real family.
+
+In genealogy 2026-04-20 session: applied Janet Rae Duncan (b.1618) as mother of Elspet Bessie Traill (b.1629) via spouse-bridge. This re-triggered a 2026-03-31 removal for the same link (11y mother age = impossible). Reverted same-day. Same session caught earlier false-positive: Mary Bolling (Virginia) erroneously set as mother of Andreas Lange (Polish) via spouse-match without place check.
+
+Pattern: age + journal + place gates convert 3 "confident" auto-fixes → 1 correct link (Margaret Pigott → John Barker, all three gates passed).
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Geni-API date corruption: ~200-year field conflation pattern
+
+**Source**: genealogy (2026-04-20)
+
+Persons whose birth/death dates are sourced from Geni-API sometimes carry impossible values like b.1830 for a person who should be b.1630 (husband b.1630, daughter b.1653). The shift is not random; it looks like a field-type confusion where a string "1830" got written instead of the parsed "1630" (perhaps character-level swap, or mis-mapping from Ancestry's serial-number IDs).
+
+In genealogy: Mary Claibourne (@I132588597835@) shows `birth.date = "1830"` `date_source = "Geni-API"`. Husband Robert Harris b.1630 England; daughter Mary Frances Harris b.1653 Virginia. Mother-daughter gap of -177 years is impossible. Real Mary Claiborne wife of Robert Harris would be b.~1630-1640.
+
+**Detection**: scan tree.json for persons where `(birth.date_source == "Geni-API")` and `(child_birth_min - person.birth < 15)` for any child. Flag for correction against primary records.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
