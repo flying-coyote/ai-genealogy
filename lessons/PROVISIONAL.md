@@ -303,3 +303,94 @@ Recommended gate (applied in the April 2026 batch):
 Persons failing the gate should have the FS ID *removed* rather than sources attached. Attaching records to the wrong profile compounds the error and propagates to child/spouse profiles via FS's relationship links.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## BFS from Gen 2 reveals systemic generation mismatches
+
+**Source**: genealogy (2026-04-20)
+
+When auditing a large genealogy tree's generation field values, compute the BFS-minimum distance from Gen 2 (the project owner's parents) via father_id/mother_id chains. Compare stored `generation` to BFS-computed value. Any mismatch is a data bug.
+
+In the genealogy tree (5,766 persons), 494 of 4,701 reachable direct-line persons had mismatches. Distribution:
+- delta -1 (stored shallower than BFS minimum): 389 cases
+- delta -2: 37 cases
+- delta +1 through +6: 67 cases
+
+Root cause: loop-research and GEDCOM imports set `generation` from the immediate child's value rather than computing from shortest path. Over time, tree re-parenting leaves stale values.
+
+**Fix protocol**: BFS from Gen 2 seeds, walk upward through parent pointers tracking minimum distance. Apply `stored = computed` for all mismatches in one pass. Validate tree integrity post-fix.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Orphan direct-line ancestors: `lineage_part` set, no child references
+
+**Source**: genealogy (2026-04-20)
+
+After BFS-fixing generation values, 313 direct-line persons (lineage_part set) remained unreachable — no descendant in the tree references them as father_id or mother_id. Two sub-patterns:
+
+- Category A (110): no incoming references at all — true orphan ancestors
+- Category B (203): referenced only by other unreachable persons — whole subtree disconnected
+
+**Auto-fix heuristic for Category A**: For each orphan, find direct-line persons one generation younger with matching surname (for male orphans) + compatible birth year (parent age 15-60 older) + vacant expected slot (father_id if orphan is male, mother_id if female). If exactly one candidate exists, link them.
+
+In genealogy run: 112 orphans → 6 unique-candidate matches → 5 safely applied (Walter Carr, John Boyne, Humphrey Barker, Anna Margaret Hottle, Aaron Jones, Steven Baker). 54 had no candidate (collateral branch markings or completely disconnected). 52 had multiple candidates (deferred for manual review).
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Parent-link anomaly classifier: diff=0 heuristics
+
+**Source**: genealogy (2026-04-20)
+
+When a direct-line person P has `father_id=X` or `mother_id=X` but X's stored generation equals P's generation (diff=0), X is likely not the parent. Auto-fix decision tree:
+
+1. **Wrong gender**: if role=father_id and X.gender='F' (or reverse) → CLEAR (high confidence)
+2. **Spouse-in-list**: if X appears in P's `spouse_ids` (or P in X's) → CLEAR (certain)
+3. **Co-parent of shared children**: if some Z has both P and X as parents → CLEAR (they're spouses)
+4. **X referenced by 3+ others as legitimate parent**: → CLEAR (X is real, just mis-assigned to P)
+5. **Same-surname + similar-age siblings**: lower-confidence — flag for manual review
+6. **No pattern matches**: flag for manual review (genealogical judgment)
+
+In genealogy: 94 diff=0 cases → 9 auto-cleared (2 unambiguous + 7 via 3+-reference heuristic) → 85 remain flagged.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Anachronistic place auto-strip: county predating organization
+
+**Source**: genealogy (2026-04-20)
+
+Many persons born before 1850 in the US have birth/death places stored with county-level specificity that predates the county's formation (e.g., "Albemarle County, Virginia" for a 1700 birth — Albemarle formed 1744). These are GEDCOM import artifacts where imported data assigned modern county names to colonial-era events.
+
+**Auto-fix**: Strip the `X County` portion of the place string when person's date < county creation year. Keep the rest (state + country). Preserve original in `place_original` field for audit.
+
+In genealogy: 99 persons corrected. Stripped counties included: Albemarle, Augusta, Bedford, Botetourt, Caroline, Fairfax, Loudoun, Pittsylvania, Shenandoah, Coles (IL), Noxubee (MS), Madison (KY), Davidson (TN), etc.
+
+**Reference table**: ~35 US county creation dates — embed in triage scripts.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Data-quality triage agent pattern (Sonnet, ~90s)
+
+**Source**: genealogy (2026-04-20)
+
+A Sonnet sub-agent can audit 800+ persons for systemic data quality issues in ~90 seconds using pure tree.json analysis (no browser, no FS API). Useful categories to detect:
+- Impossible dates (death < birth)
+- Impossible lifespans (>100 years)
+- Anachronistic places (county before statehood/organization)
+- Parent-age implausibles (<14 or >70 at birth for fathers; <14 or >50 for mothers)
+- Orphaned parent references (`father_id` pointing to non-existent person)
+- Generation inconsistency (parent-child gen difference != 1)
+
+In genealogy: 831 defects surfaced across 884 direct-line Gen 12-15 weak persons. Bulk auto-fix applied to 494+99+88+7 = 688 cases. Remaining ~143 flagged for manual review.
+
+Agent can run in background (fire and notify on completion) while primary session handles browser-based tasks in parallel.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
