@@ -524,3 +524,90 @@ All 8 flags were false positives. Decision: KEEP_UNVERIFIED on each (separate-gr
 **Fix direction**: the auto-strip should gate on country + prefer the highest-resolution country-match. If the place string contains "England" / "Scotland" / "Wales" / "Ireland", US-county dates are irrelevant.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Check parish register start date before searching historical collections
+
+**Source**: dry-cross (2026-04-21)
+
+Two independent research failures this session traced to searching parish-register collections for baptisms/marriages that **predate the register itself**:
+
+- **Westfield NJ 1736 marriage** (@I2727@ John Henry Ross Sr × @I2728@ Sarah Bratton): Westfield Presbyterian Church marriage register begins **1759**. A 1736 entry cannot exist. Prior FS Historical Records searches for this marriage returned zero because the record is structurally unreachable, not because of an indexing gap.
+- **Llandwrog Caernarvonshire 1695 baptism** (@I2794@ George Griffith): Llandwrog parish baptism register begins **1711**. A 1695 entry cannot exist in the surviving register. Prior FS collection searches for this baptism failed for the same structural reason.
+
+**Rule**: before searching any parish-register collection for a pre-1800 event, look up the register's **start year** via Findmypast, Forebears, GENUKI, or the NLW (Wales) / ScotlandsPeople (Scotland) / PRONI (N. Ireland) catalogue. If the event date predates the register, redirect research immediately to:
+
+1. Bishop's Transcripts / Diocesan Archives (often survive earlier than originals)
+2. Marriage Bonds & Allegations (separate index, often earlier coverage)
+3. Will/probate records in the relevant county (may reference earlier marriages/births)
+4. Tax/tithable/land records for indirect anchoring
+
+**Why this matters**: Ancestry "Potential Parent" and tree-propagated metadata frequently attach placenames that the source registers cannot actually support. Without the register-start-date check, researchers waste hours searching for records that cannot exist, and POSSIBLE attributions get falsely upgraded on the assumption that "the register is just not indexed yet".
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## FS oauth2 token discovery: filter sessionStorage by provider + test /sources endpoint
+
+**Source**: dry-cross (2026-04-21)
+
+FS session token refresh procedure (`docs/FS_TOKEN_REFRESH.md`) says to extract the `p0-*` session ID from Chrome sessionStorage. In practice, sessionStorage contains **many** `p0-*` entries — most are `cis` provider entries that lack full API scope. Only the entry with `provider: "Authn"` AND `protocol: "oauth2"` carries a full-scope bearer token.
+
+**Detection pattern** (browser console or Playwright evaluate):
+
+```javascript
+() => {
+  const found = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i);
+    const v = sessionStorage.getItem(k);
+    if (v && v.includes('"id":"p0-')) {
+      const m = v.match(/"id":"(p0-[^"]+)"/);
+      if (m) {
+        const oauth = v.includes('"protocol":"oauth2"');
+        const provider = v.match(/"provider":"([^"]+)"/);
+        found.push({id: m[1], oauth, provider: provider ? provider[1] : null});
+      }
+    }
+  }
+  return found;
+}
+```
+
+**Validation gate** — HTTP 200 on `/persons/{id}` is necessary but not sufficient. Always test the `/sources` endpoint:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/x-gedcomx-v1+json" \
+  "https://api.familysearch.org/platform/tree/persons/GDK9-F7S/sources"
+```
+
+- `HTTP 200` or `HTTP 204` on `/sources` = full-scope token (harvest-capable).
+- `HTTP 401` on `/sources` but 200 on `/persons` = partial-scope token (discovery-only; can't harvest).
+
+In 2026-04-21 session, 3 oauth2 candidates were in sessionStorage; only 1 returned 204 on /sources. The other 2 returned 401 despite `oauth2 + Authn`. Mechanism unclear — possibly concurrent sessions from different tabs — but the /sources test reliably distinguishes them.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Independent compiled genealogies as sanity check for FS multi-researcher consensus
+
+**Source**: dry-cross (2026-04-21)
+
+FamilySearch Family Tree is a multi-researcher wiki where consensus on a profile can encode the same error across 3+ contributors. "3 researchers agree" is weaker evidence than it looks when those researchers are copying each other.
+
+**Test**: before trusting FS consensus on a pre-1800 profile, check for **independent** compiled genealogies at:
+- Stanford/Kennedy genealogy (graphics.stanford.edu/~dk/genealogy/) — academic-style compiled genealogy, often cites primary sources
+- Dictionary of Welsh Biography (biography.wales) — Welsh gentry lineages
+- DAR Ancestor database (dar.org) — Revolutionary War Patriot lineages with submitted evidence
+- USGenWeb projects for the relevant county/state
+
+If an independent compiled genealogy **diverges** from the FS narrative on load-bearing facts (migration path, children, spouse), treat the FS profile's facts as **unsourced** until a primary source resolves the split. Do not auto-upgrade confidence based on FS consensus alone.
+
+**Example** (@I2727@ John Henry Ross Sr, 2026-04-21): FS GDK9-F7S narrative (Fermanagh → Westfield NJ → Botetourt VA, 7 children, wife Sarah Bratton) diverged from Stanford/Kennedy (Fermanagh → New Castle DE → MD → Botetourt VA, 6 children, no wife named) on three load-bearing points. Earlier session had upgraded the person POSSIBLE→PROBABLE on FS consensus; that upgrade was reversed in journal once the independent compiled genealogy surfaced.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
