@@ -611,3 +611,22 @@ If an independent compiled genealogy **diverges** from the FS narrative on load-
 **Example** (@I2727@ John Henry Ross Sr, 2026-04-21): FS GDK9-F7S narrative (Fermanagh → Westfield NJ → Botetourt VA, 7 children, wife Sarah Bratton) diverged from Stanford/Kennedy (Fermanagh → New Castle DE → MD → Botetourt VA, 6 children, no wife named) on three load-bearing points. Earlier session had upgraded the person POSSIBLE→PROBABLE on FS consensus; that upgrade was reversed in journal once the independent compiled genealogy surfaced.
 
 **Needs confirmation in**: genealogy, genealogy-kindred
+
+---
+
+## Ancestry Potential Parent cascades are NOT primary evidence
+
+**Source**: dry-cross (2026-04-21)
+
+When Ancestry surfaces "Potential Parent" cards on a tree person and the acceptance cascades into adding new ancestors (Gen+1, Gen+2 chains), those links are **inferred from Ancestry community-tree consensus**, not from primary sources. The consensus can encode the same error across dozens of trees if one researcher made a transcription mistake and others copied it.
+
+**2026-04-21 cautionary case**:
+- 2026-04-19 cascade added @I2794@ George Griffith (b.~1695 Wales, d.1777 Bedford VA) as father of @I2793@ Capt Benjamin Griffith via Ancestry Potential Parent accept.
+- 2026-04-21 direct read of FS ARK image of George Griffith's 1777 Bedford Co VA will (3:1:3QS7-89P6-2XY4): will names 1 son (George Jr) and 5 daughters (Izariah Berton, Sarah Storman, Rebeccah Shoeman, Ann Anderson, Mary Anderson). **Benjamin is not named as son.**
+- The entire Ancestry consensus for this link appears to be a tree-propagated error. Welsh "Llandwrog" origin claim is separately dubious (parish baptism register doesn't begin until 1711, so 1695 baptism cannot exist there).
+
+**Rule**: before accepting an Ancestry Potential Parent cascade for any POSSIBLE-confidence person, require at least ONE independent T1-T3 primary source (probate, land, vital record, census linking the two) that confirms the parent-child relationship. If the only evidence is "multiple Ancestry trees agree", the link is T5 and should be held at POSSIBLE with explicit `concerns` flagging that Ancestry consensus is the sole evidence.
+
+**Practical check**: after a cascade adds Gen+N ancestors, look up the parent's will or probate record (usually free via FS Historical Records or county archives) to verify the child is named as heir. 30 minutes of verification can save weeks of research going down a wrong line.
+
+**Needs confirmation in**: genealogy, genealogy-kindred
