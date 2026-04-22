@@ -214,3 +214,80 @@ Pattern:
 Example profile for reference style: Reffitt-189 (timeline style), Rose Marie Clooney (narrative style).
 
 Non-standard headers to avoid: `=== Additional Records ===`, `=== Cross-Platform Profile Links ===` — these are not WikiTree idiomatic.
+
+## Source-quality: what NOT to cite (Lukas feedback 2026-04-21)
+
+Three citation patterns the mentor flagged as unacceptable. These look plausible at a glance but are not valid sources for a WT profile:
+
+### 1. WikiTree profile as source
+
+**Bad**:
+```wiki
+<ref>WikiTree contributors, "James Nesbitt" (Nesbitt-1163), accessed 2026-04-13, https://www.wikitree.com/wiki/Nesbitt-1163</ref>
+```
+
+Another contributor's WT profile is not evidence. Their bio is built from *some* source — cite THAT source, not their page. If you genuinely cannot find the underlying record, drop the claim from the bio rather than cite a WT profile.
+
+### 2. FamilySearch profile URL instead of record ARK
+
+**Bad**:
+```wiki
+<ref>"FamilySearch Family Tree," FamilySearch (https://www.familysearch.org/tree/person/details/PCZW-TY2 : accessed 2026-03-02)</ref>
+```
+
+An FS person-detail URL is a navigation aid, not a source. The FS profile has specific records attached — cite THOSE, with their ARK URLs:
+
+**Good**:
+```wiki
+<ref>"Maryland, Births and Christenings, 1650-1995", FamilySearch (https://www.familysearch.org/ark:/61903/1:1:HYG8-N9PZ), Jane Slater, 24 Mar 1773, Prince George's Co MD. Father: Richard Slater.</ref>
+```
+
+FS ARK URLs contain `/ark:/61903/` followed by a record identifier (`1:1:`, `3:1:`, etc.). If your URL doesn't have that pattern, it's a tree/profile URL and should not be a `<ref>`.
+
+### 3. Vague citation with no specific document
+
+**Bad**:
+```wiki
+<ref>German immigrant from Rumbach, Palatinate. Married Susan Catherine Eacus 1749, PA, accessed 28 Feb 2026</ref>
+```
+
+Problems:
+- No record named (passenger list? church register? compiled genealogy?)
+- Mixed facts (immigration + marriage) cited to one vague blob
+- "accessed" date but no URL or archive/repository identifier
+
+**Good** (split into two refs, one per fact, each pointing to a specific document):
+```wiki
+Heinrich Kern emigrated from Rumbach, Palatinate to Pennsylvania in the 1740s.<ref>"Pennsylvania German Pioneers", Volume I, Ralph Beaver Strassburger, ed. (Pennsylvania German Society, 1934), page 352: Heinrich Kern, Ship *Patience*, arrived Philadelphia 19 Sep 1748.</ref>
+
+He married Susan Catherine Eacus on [date] in [county], Pennsylvania.<ref>Berks County, Pennsylvania, Marriage Records 1749-1800, Berks County Historical Society, Marriage of Heinrich Kern and Susan Catharina Eacus.</ref>
+```
+
+### Red-flag keywords
+
+Before posting any `<ref>`, check whether the text contains any of:
+- `accessed [date]` but no URL or archive — incomplete; add the URL or remove the ref
+- `wikitree.com/wiki/XXX-NNNN` — WT profile, not a source
+- `familysearch.org/tree/person/` — FS profile, not a record
+- `FamilySearch. [name]. [date]. xxx` without `ark:` — missing specific record pointer
+- Two facts in one `<ref>` — split into separate refs, one per record
+
+### Audit pattern (tree.json sources)
+
+To flag potentially-bad citations in a project's tree.json before exporting to WT:
+
+```python
+def is_suspect(source):
+    url = (source.get('url') or source.get('ark') or '').lower()
+    citation = (source.get('citation') or '').lower()
+    # WT profile as source
+    if 'wikitree.com/wiki/' in url: return 'wt_profile'
+    # FS profile URL (not record ARK)
+    if 'familysearch.org/tree/person/' in url: return 'fs_profile'
+    # No URL + no specific document reference
+    if not url and not any(k in citation for k in ['will book', 'deed book', 'page ', 'roll ', 'volume ', 'ark:']):
+        return 'vague_no_url'
+    return None
+```
+
+Use this as a pre-export gate, not a mass-rewrite trigger — most historical entries can be remediated during normal per-person research touches.

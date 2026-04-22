@@ -630,3 +630,20 @@ When Ancestry surfaces "Potential Parent" cards on a tree person and the accepta
 **Practical check**: after a cascade adds Gen+N ancestors, look up the parent's will or probate record (usually free via FS Historical Records or county archives) to verify the child is named as heir. 30 minutes of verification can save weeks of research going down a wrong line.
 
 **Needs confirmation in**: genealogy, genealogy-kindred
+
+## WT citations: don't cite WT profiles, FS profile URLs, or vague aggregator blobs
+
+**Source**: genealogy (2026-04-21, Lukas Murphy mentor feedback)
+
+Mentor flagged 3 patterns as unacceptable on WT bios. Cross-project tree.json audit (2026-04-21) found these patterns widely distributed: genealogy 14.3% of sources have no URL, ~4.5% cite a WT profile as source; kindred 9.4% no URL; dry-cross 2.5% WT-as-source.
+
+**Pattern 1 (WT profile as source)**: `<ref>WikiTree contributors, "James Nesbitt" (Nesbitt-1163), ...</ref>` — another contributor's profile is not evidence; cite the underlying record or drop the claim.
+
+**Pattern 2 (FS profile URL, not record ARK)**: `<ref>... FamilySearch (https://www.familysearch.org/tree/person/details/PCZW-TY2)</ref>` — FS person pages are navigation; cite the specific records attached to them (URLs with `ark:/61903/1:1:` or `ark:/61903/3:1:`).
+
+**Pattern 3 (vague no-URL citation)**: `"German immigrant from Rumbach, Palatinate. Married Susan Catherine Eacus 1749, PA, accessed 28 Feb 2026"` — no record named, multiple facts crammed into one ref, "accessed" date without URL. Split into separate refs, each pointing to a specific document with URL/archive location.
+
+Full audit pattern + remediation guidance added to `platform-guides/wikitree.md` "Source-quality: what NOT to cite" section.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross (both already show the same patterns per 2026-04-21 audit, but cross-project applicability of the remediation process hasn't been field-tested yet).
+
