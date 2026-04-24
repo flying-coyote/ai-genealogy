@@ -53,6 +53,12 @@ For disputed rules, see [CONTESTED.md](CONTESTED.md).
 
 **Rule [CONFIRMED ×2]: Surname "Americanization" can invert under deeper research.** An apparent Americanization hypothesis (Doss → Dawes) can prove incorrect when you find a Gen+1 ancestor with the "original" spelling, showing the relationship is inverted. Require 3+ generations of consistent spelling before claiming an etymology pattern. *(dry-cross, genealogy)*
 
+**Rule [CONFIRMED ×3]: Citations must point to specific records, not to profiles or aggregator collection names.** Three invalid-citation patterns (flagged by mentor Lukas Murphy 2026-04-21, confirmed across all 3 projects in 2026-04-23 cleanup):
+1. **WikiTree profile as source** — `<ref>WikiTree contributors, "Nesbitt-1163"...</ref>`. Another contributor's profile is not evidence; cite the underlying record or drop the claim.
+2. **FS profile URL instead of record ARK** — `<ref>... FamilySearch (https://www.familysearch.org/tree/person/details/PCZW-TY2)</ref>`. FS person pages are navigation; cite the specific records attached to them (URLs with `ark:/61903/1:1:` or `ark:/61903/3:1:`).
+3. **Vague collection-name citation with no URL/document** — `"Virginia Land/Marriage/Probate 1639-1850; Isabella Baughzel"` (no specific record, no URL, multiple facts crammed into one ref).
+Cross-project source-quality audit (2026-04-23) found: genealogy 14.3% no-URL rate, kindred 9.4%, dry-cross 2.0%. Remediation via `scripts/fix-evidence-quality.py` with `--only {fs-backfill|wt-demote|geni-mh-demote|ancestry-split|findagrave-id|narrative-tier1}` buckets dropped the no-URL rate substantially across all 3 projects. Full audit + remediation guidance in `platform-guides/wikitree.md` "Source-quality: what NOT to cite" section. The WikiTree Browser Extension's Bio Check feature enforces the same rules at save-time — enable it before any WT bio edit. *(All 3 projects — genealogy/kindred/dry-cross 2026-04-21 → 2026-04-23)*
+
 ---
 
 ## FamilySearch patterns
@@ -108,6 +114,8 @@ For disputed rules, see [CONTESTED.md](CONTESTED.md).
 **Rule [CONFIRMED ×2]: CDP `fetch()` works authenticated; `page.goto()` drops cookies on navigation.** When using Chrome CDP, `fetch()` calls from browser context inherit session cookies. `page.goto()` to certain Ancestry/FS pages may drop authentication state mid-navigation. Use `browser_evaluate` with `fetch()` for API calls requiring auth. *(genealogy, dry-cross)*
 
 **Rule [CONFIRMED ×2]: For "click all matching elements" in Playwright, always `$$` first then iterate handles.** Never re-query `$` inside a loop intending to find different elements — re-queries find already-processed elements. *(dry-cross, kindred)*
+
+**Rule [PROVISIONAL — genealogy 2026-04-22]: Stable Google Chrome refuses `--load-extension`; use Playwright's Chromium for Testing.** Chrome 143+ stable explicitly rejects the flag (`--load-extension is not allowed in Google Chrome, ignoring`). CDP `Extensions.loadUnpacked` method returns `Method not available` on WebSocket transport. Workaround: switch the CDP `chrome-cdp.sh` script to Playwright's bundled Chromium (`~/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome` = Chrome/145 for Testing) when `vendor/wikitree-be-dist/` is present. User-data-dir format is compatible — cookies/logged-in tabs preserve across the switch. Full install procedure + feature reference in `platform-guides/wikitree-browser-extension.md`. *(Needs confirmation in kindred, dry-cross — both projects can share the same `vendor/wikitree-be-dist/` path to keep a single extension ID across projects.)*
 
 ---
 
