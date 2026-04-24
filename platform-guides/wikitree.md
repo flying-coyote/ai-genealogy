@@ -4,6 +4,8 @@
 
 WikiTree is a single shared collaborative tree — all contributors edit the same profile for a given historical person, not separate copies. This means edits are visible to and reversible by the entire community. It is the most valuable platform for pre-1700 European ancestry and provides a useful cross-check against FS and Ancestry data on American lineages. The API is strictly read-only. All edits require the browser or browser automation via CDP.
 
+**See also: [`wikitree-browser-extension.md`](./wikitree-browser-extension.md)** for the WikiTree Browser Extension capability reference (~100 features: Bio Check, WikiTree+ integration, Auto Bio, Find A Grave extractor, etc.). The extension's built-in Bio Check encodes Lukas Murphy's source-quality rules as executable logic — running it before save catches exactly the regressions he flagged.
+
 ---
 
 ## API (Read-Only)
