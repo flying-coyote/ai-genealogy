@@ -645,5 +645,113 @@ Mentor flagged 3 patterns as unacceptable on WT bios. Cross-project tree.json au
 
 Full audit pattern + remediation guidance added to `platform-guides/wikitree.md` "Source-quality: what NOT to cite" section.
 
-**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross (both already show the same patterns per 2026-04-21 audit, but cross-project applicability of the remediation process hasn't been field-tested yet).
+**Confirmed in**: genealogy, genealogy-kindred, genealogy-dry-cross (2026-04-23 cross-project cleanup shipped — 13 commits, 5,193 mechanical actions, 32 cascade VERIFIED→PROBABLE demotions). Candidate for promotion to LESSONS.md.
+
+---
+
+## Chrome stable blocks `--load-extension`; use Playwright's Chromium for Testing
+
+**Source**: genealogy (2026-04-22)
+
+Google Chrome stable (version 143+ tested) explicitly refuses `--load-extension` with the warning: `--load-extension is not allowed in Google Chrome, ignoring.` Verified via `--enable-logging=stderr` with verbose vmodule. The flag is parsed but ignored; extension directory is never registered in `Preferences`. This has been a policy since ~Chrome 121.
+
+CDP workarounds that do NOT work on stable Chrome WebSocket:
+- `Extensions.loadUnpacked` method returns `-32000 Method not available` (gated behind pipe transport + DeveloperExtensionAPI feature flag that doesn't enable it either)
+- `Target.createBrowserContext` has no extension parameters
+- Feature flags `DeveloperExtensionAPI`, `ExtensionsCdpSupport` don't unlock the method
+
+**Working alternatives**:
+1. **Playwright's bundled Chromium for Testing** (e.g. `/home/jerem/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome` = Chrome/145.0.7632.6). Accepts `--load-extension` normally. User-data-dir format is Chrome-compatible — cookies and session state preserve across the switch.
+2. Chrome Beta/Dev/Canary binaries (not tested; documented as accepting the flag).
+3. Enterprise policy `ExtensionSettings` with `installation_mode: force_installed` + Web Store extension ID (requires sudo to write `/etc/opt/chrome/policies/managed/`).
+
+Script pattern in `scripts/chrome-cdp.sh`: auto-select Chromium when extension dir exists, fall back to stable Chrome otherwise. Guards the setup so unrelated workflows still work if the vendor dir is missing.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## "Other" vague-citation sub-buckets: LDS compiled / Legacy NFS / Ancestry trees / FTW files → T5
+
+**Source**: genealogy (2026-04-23)
+
+The initial source-quality classifier (7 buckets fs_backfill/wt_profile/geni_mh/ancestry_tree/findagrave/census_specific/narrative) left 6,512 sources in "other" across 3 projects as unclassifiable. A second-pass classifier revealed the "other" bucket is dominated by **T2/T3-claimed sources that are actually T5 under methodology**:
+
+| Pattern | genealogy | kindred | dry-cross | Total | Correct tier |
+|---|---:|---:|---:|---:|---|
+| `Ancestral File \| Ordinance Index \| IGI \| Family History Library \| LDS` | 653 | 37 | 118 | **808** | T5 (crowdsourced LDS compilation) |
+| `Legacy NFS Source` | 472 | 0 | 179 | **651** | T5 (legacy FS tree aggregation) |
+| `Ancestry Family Trees \| Public Member Trees \| One World Tree` | 323 | 14 | 54 | **391** | T5 (tree, not record) |
+| `\.FTW \| \.ged \| \.FTM \| Sweezycopy` | 119 | 4 | 15 | **138** | T5 (personal GEDCOM file) |
+| `Geni World \| MyHeritage\.com` (platform ≠ geni) | 28 | 16 | 17 | **61** | T4 |
+| `familysearch\.org/tree/person` in citation | 0 | 4 | 0 | **4** | T4 (profile URL, not record) |
+| `Memorabilia \| family bible \| personal recollection` | 28 | 0 | 3 | **31** | T5 (personal memory) |
+| (empty citation) | 0 | 207 | 0 | **207** | REMOVE |
+| **Legitimate published** (Burke's, NEHGR, Weis, Stuart, Magna Carta Sureties) | 595 | 5 | 30 | **630** | KEEP T2/T3, flag `manual_review` for URL backfill |
+| **True remaining** (other genuine records missing URLs) | 2826 | 243 | 522 | **3591** | KEEP T2/T3, manual review |
+| **TOTAL** | 5044 | 530 | 938 | **6512** | — |
+
+Sub-bucket auto-fix is additive to the first-pass cleanup: extend `fix-evidence-quality.py` with `--only lds-t5-demote`, `--only legacy-nfs-demote`, `--only ancestry-tree-content-demote`, `--only ftw-file-demote`, `--only empty-remove`, etc. Runs after the first-pass buckets, applies same patch-log pattern.
+
+**Key insight**: the initial classifier's `platform` field check is insufficient for Ancestry/Geni/MH content because the platform field reflects WHERE the source entry lives in tree.json (usually `familysearch` because sources came from FS harvest of those trees), not WHAT the source originally is. Content-based detection via citation regex is the more reliable signal.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Cascade confidence demotion after bulk tier-change
+
+**Source**: genealogy (2026-04-23)
+
+When a bulk source-quality cleanup demotes many tier-1-3 sources to tier 4-5 (e.g. WT-profile-as-source → T4, Ancestry tree content → T5), some VERIFIED persons end up with no evidentiary-tier (T1-2) sources remaining. The validator catches these as `confidence_ceiling` errors (`Person @I...@: VERIFIED but best source is Tier 4`).
+
+Required workflow: after every bulk tier-demotion commit, run the validator and cascade-demote any resulting VERIFIED-with-T3+-best persons down to PROBABLE (or POSSIBLE if best-tier is 4-5). Don't revert the demotion — the tier change is correct; it's the confidence value that was overclaimed all along.
+
+Observed ratios in 2026-04-23 genealogy cleanup:
+- Bucket D (ancestry-split, 1,208 rows demoted) → 8 cascade demotions
+- Bucket B (wt-demote, 1,218 rows demoted) → 24 cascade demotions
+- Total: 32 VERIFIED → PROBABLE (0.5% of tree)
+
+Implementation:
+```python
+import subprocess, re, json
+out = subprocess.run(['python3', 'scripts/validate-tree.py'], capture_output=True, text=True).stdout
+ids = re.findall(r'Person (@[^@]+@):\s*VERIFIED but best', out)
+# or scan tree directly:
+for p in tree['persons']:
+    v = p.get('validation', {})
+    if v.get('confidence') != 'VERIFIED': continue
+    srcs = v.get('evidence', {}).get('sources', [])
+    if srcs and min(s.get('tier', 5) for s in srcs) > 2:
+        v['confidence'] = 'PROBABLE'
+        # add audit note
+```
+
+Future refinement: add an auto-cascade pass to `fix-evidence-quality.py` that runs after any bucket apply. Currently manual.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## WikiTree Browser Extension (Preview) ships with a SourceRules engine that mirrors mentor feedback
+
+**Source**: genealogy (2026-04-23)
+
+The WT BE v2.13.2.3 codebase includes a `bioCheck/SourceRules.js` class (at `src/features/bioCheck/`) that encodes roughly 100 patterns for identifying invalid genealogical sources. The logic closely mirrors Lukas Murphy's 2026-04-21 mentor feedback: it rejects patron-submitted tree pointers, Ancestry Family Trees as evidence, LDS IGI/Ancestral File as primary-tier sources, and bare collection-name citations without specific records.
+
+Exported API (JavaScript):
+- `isInvalidSource(line)` — full-line invalid-source check
+- `isInvalidPartialSource(line)` — substring-matching for partial bad patterns
+- `isInvalidSourceTooOld(line)`, `isInvalidSourcePre1700(line)` — era-specific rules
+- `removeInvalidSourcePart(line)`, `removeInvalidSourcePartTooOld(line)` — sanitization
+- `isCensus(line)`, `hasCensusString(line)` — census detection
+- `isResearchNoteBox(line)`, `isProjectBox(line)`, `isNavBox(line)`, `isSticker(line)` — WT template parsing
+
+The WT BE also ships a `BioCheckPerson` + `Biography` pipeline that validates structure (biography heading, sources heading, `<references />` tag, inline `<ref>` count, categories position) and returns a `bioScore`.
+
+**Opportunity for this project**: port `SourceRules.isInvalidSource()` patterns to Python in `scripts/fix-evidence-quality.py`. Would sharpen the classifier beyond the current 7 broad buckets and leverage the mentor-aligned taxonomy the WT BE already encodes.
+
+Also: the extension's `show_suggestions` feature consumes `plus.wikitree.com` JSON endpoints — our `scripts/wikitree-plus-fetch.py` (2026-04-22) hits the same backend. The extension adds the `appID=apiExtWbe` parameter per `docs/CallsTo wikitree.com.md`; our script does not yet (low priority).
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
 
