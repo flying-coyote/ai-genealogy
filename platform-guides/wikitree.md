@@ -293,3 +293,42 @@ def is_suspect(source):
 ```
 
 Use this as a pre-export gate, not a mass-rewrite trigger — most historical entries can be remediated during normal per-person research touches.
+
+---
+
+## Tier-2 remediation patterns: dangling-ref decision tree (kindred 2026-04-21/22)
+
+**Source**: genealogy-kindred — 50 Tier-2 dangling-ref fixes across two days, zero rollbacks/2562s/manager complaints. Decision tree below was the dominant working pattern.
+
+A "dangling ref" is a `<ref name="X">...</ref>` definition placed after `<references />` (or anywhere in the bio) with no inline `<ref name="X" />` invocation tying it to a specific factual claim. The 2026-03-01 audit flagged 117 such cases on the kindred-managed slice. Three branches resolve them; pick by inspecting the dangling ref's content vs. the bio's existing inline refs:
+
+### Branch 1 — Exact-ARK duplicate → delete the dangling ref
+
+If the dangling ref's ARK is byte-identical to an existing inline ref's ARK, the dangling definition adds no evidence and creates footnote clutter. Delete the dangling block; leave the inline invocation as-is.
+
+Also applies to **circular self-refs** like `<ref name="source">WikiTree Profile Smith-123</ref>` on the Smith-123 profile itself — these have no evidentiary value and should be deleted outright (same call as the LESSONS rule "don't cite WT profiles as source").
+
+### Branch 2 — Alt-ARK same-record → convergent invocation
+
+If the dangling ref cites a *different* ARK that documents the **same factual claim** as an existing inline ref (e.g., a FamilySearch ARK for a 1850 census entry where the inline ref already cites an Ancestry index of the same census household), add `<ref name="dangling-name" />` next to the existing inline invocation. Both refs now flank the same claim and reinforce it. The audit's dangling-ref check passes; no generated prose needed.
+
+This was the dominant resolution — applied to ~80% of the 50 fixes in the kindred blitz. Strongest cases were marriage and census records where Ancestry/FS/FAG cross-index the same primary source. Examples: Tucker-17772 (4 census refs paired), Spencer-33135 (marriage + 1920 census), Spencer-33138 (9 convergent refs across 5 census + marriage + burial).
+
+A close cousin: **direct filiation from will/probate ARKs is T1 gold**. When a dangling ref points to a will that names the subject as a child or heir, it is the highest-quality evidence for filiation in the bio — invoke it inline against the parent-naming sentence specifically (e.g., Duncan-7077 `probate1820` for Charles Duncan's 1820 Daviess Co KY will naming "my son Samuel").
+
+### Branch 3 — Different-subject ref → skip for human
+
+If the dangling ref documents a *different person* (different name, different lifespan, contradicts bio's other facts), do not force-fit. Examples from the kindred batch: Grant-1781 (ref cites Thomas Grant + Hannah Corral marriage; bio's subject married Mary Bowden in 1726), Kindred-304 (ref cites a 1829 Susan Kindred marriage; bio's subject married Abraham Branaman in 1819 and died in 1829). These are research disputes, not formatting issues — flag in research notes, leave the bio alone.
+
+### Skip conditions (do not edit, regardless of branch)
+
+- **Pre-1700 birth without PGM cert**: Wiley-6998 (and any non-certified account) hits a UI textarea-lock on pre-1700 profiles. The edit page renders no editable field. Detect by birth year < 1700 and skip at queue-build time.
+- **Empty/sparse bio (<200 chars, no inline refs)**: Resolving dangling refs here would require inventing inline factual sentences — exactly the automation signal that triggered the 2026-03-01 Error 2562 block. Defer to per-person research session.
+- **Vague placeholder refs**: Citations like `"Published county history"` with no ARK or page number are not actionable for inline invocation. Needs human source research, not formatting cleanup.
+
+### What this is not
+
+This is not a general WT bio-writing pattern; it is a remediation tactic for one specific audit output (dangling `<ref name="X">...</ref>` blocks). For new content, follow the mentor-guided citation format earlier in this guide.
+
+**Confirmed in**: genealogy-kindred (50 edits, 2026-04-21/22).
+**Needs confirmation in**: genealogy, genealogy-dry-cross.
