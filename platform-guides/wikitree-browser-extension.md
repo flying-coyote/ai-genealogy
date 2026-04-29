@@ -125,12 +125,20 @@ you keep the same `vendor/wikitree-be-dist/` path.
 
 ## Features are opt-in — enable these first
 
-Install alone enables **nothing**. Open the options page in your CDP browser:
+Install alone applies **default-on features only** (~30 of 78). Defaults
+are not persisted — they take effect at runtime each load. Any feature you
+toggle in the options page IS persisted (per-feature key in
+`chrome.storage.sync`, e.g. `showSuggestions_AutoSuggestions`). There is
+**no global Save button** — each toggle write happens immediately on click.
+
+Open the options page in your CDP browser:
 ```
 chrome-extension://imdflchbmmlikjngjekjbeieoocfhbab/options.html
 ```
 
-For the Lukas-aligned source-quality workflow, enable these 5 first:
+For the Lukas-aligned source-quality workflow, the following 5 are
+default-on but make sure to enable Auto-Suggestions explicitly (it's the
+only one off by default that you actually want):
 
 | Feature | Category | Why |
 |---|---|---|
@@ -302,17 +310,37 @@ and `other` buckets in our triage classifier.
 
 ### WikiTree+ data — `scripts/wikitree-plus-fetch.py`
 
-The extension's **Show Suggestions** feature consumes `plus.wikitree.com`
-JSON endpoints inline. Our Python helper does the same thing out-of-browser
-for programmatic analysis:
+The extension's **Show Suggestions** feature consumes the public
+`plus.wikitree.com` HTML pages inline. Our Python helper does the same out
+of browser:
 
 ```bash
-python3 scripts/wikitree-plus-fetch.py
-# → data/reports/wt_plus_errors_<manager>_<date>.json
+python3 scripts/wikitree-plus-fetch.py --manager-id 48969423
+# → data/reports/wt_plus_errors_<wtid>_<date>.json
 ```
 
-The extension uses `appID=apiExtWbe` per `docs/CallsTo wikitree.com.md`.
-Our script should use `appID=apiSvc_genealogy_cleanup` when sending requests.
+**Verified endpoints** (2026-04-29 — discovered by inspecting the BE's
+own `#suggestionsTable` link href on Rodgers-10206):
+
+| URL | Returns | Auth |
+|---|---|---|
+| `https://plus.wikitree.com/function/WTWeb/Suggestions.htm?UserID=<N>&generations=0` | One profile + relatives | Public |
+| `https://plus.wikitree.com/function/WTWebUser/Suggestions.htm?UserID=<N>` | All suggestions for profiles managed by user N | Public |
+
+`<N>` is the **numeric** user ID, not the WT-ID. To find it: open the
+target person's WT profile page with the BE loaded, view the suggestions
+panel — the "View the report on WikiTree Plus" link's href contains
+`UserID=<numeric>`. (Wiley-6910 = 48969423.)
+
+Layout: one HTML `<table>` per error code. Header row's `td[0]` (with
+`rowspan=2`, bg `#FFDDDD`) carries the `Error|Warning|Hint NNN: title`
+label; `td[1]` is the flagged profile; `td[3..7]` are name/relationship/
+birth/death/gender. Continuation rows (no header) follow the same column
+order with the label columns shifted off.
+
+The extension uses `appID=apiExtWbe` for its own API calls. Our script
+should use `appID=apiSvc_genealogy_cleanup` when sending requests
+(currently we don't pass any appID since the endpoint is public).
 
 ### Rate limiter — `scripts/wt-rate-check.py`
 
