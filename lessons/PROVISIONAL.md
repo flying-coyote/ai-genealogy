@@ -631,24 +631,6 @@ When Ancestry surfaces "Potential Parent" cards on a tree person and the accepta
 
 **Needs confirmation in**: genealogy, genealogy-kindred
 
-## WT citations: don't cite WT profiles, FS profile URLs, or vague aggregator blobs
-
-**Source**: genealogy (2026-04-21, Lukas Murphy mentor feedback)
-
-Mentor flagged 3 patterns as unacceptable on WT bios. Cross-project tree.json audit (2026-04-21) found these patterns widely distributed: genealogy 14.3% of sources have no URL, ~4.5% cite a WT profile as source; kindred 9.4% no URL; dry-cross 2.5% WT-as-source.
-
-**Pattern 1 (WT profile as source)**: `<ref>WikiTree contributors, "James Nesbitt" (Nesbitt-1163), ...</ref>` — another contributor's profile is not evidence; cite the underlying record or drop the claim.
-
-**Pattern 2 (FS profile URL, not record ARK)**: `<ref>... FamilySearch (https://www.familysearch.org/tree/person/details/PCZW-TY2)</ref>` — FS person pages are navigation; cite the specific records attached to them (URLs with `ark:/61903/1:1:` or `ark:/61903/3:1:`).
-
-**Pattern 3 (vague no-URL citation)**: `"German immigrant from Rumbach, Palatinate. Married Susan Catherine Eacus 1749, PA, accessed 28 Feb 2026"` — no record named, multiple facts crammed into one ref, "accessed" date without URL. Split into separate refs, each pointing to a specific document with URL/archive location.
-
-Full audit pattern + remediation guidance added to `platform-guides/wikitree.md` "Source-quality: what NOT to cite" section.
-
-**Confirmed in**: genealogy, genealogy-kindred, genealogy-dry-cross (2026-04-23 cross-project cleanup shipped — 13 commits, 5,193 mechanical actions, 32 cascade VERIFIED→PROBABLE demotions). Candidate for promotion to LESSONS.md.
-
----
-
 ## Chrome stable blocks `--load-extension`; use Playwright's Chromium for Testing
 
 **Source**: genealogy (2026-04-22)
@@ -671,11 +653,11 @@ Script pattern in `scripts/chrome-cdp.sh`: auto-select Chromium when extension d
 
 ---
 
-## "Other" vague-citation sub-buckets: LDS compiled / Legacy NFS / Ancestry trees / FTW files → T5
+## "Other" vague-citation sub-buckets: LDS compiled / Legacy NFS / Ancestry trees / FTW files → T4 (validator-enforced)
 
 **Source**: genealogy (2026-04-23)
 
-The initial source-quality classifier (7 buckets fs_backfill/wt_profile/geni_mh/ancestry_tree/findagrave/census_specific/narrative) left 6,512 sources in "other" across 3 projects as unclassifiable. A second-pass classifier revealed the "other" bucket is dominated by **T2/T3-claimed sources that are actually T5 under methodology**:
+The initial source-quality classifier (7 buckets fs_backfill/wt_profile/geni_mh/ancestry_tree/findagrave/census_specific/narrative) left 6,512 sources in "other" across 3 projects as unclassifiable. A second-pass classifier revealed the "other" bucket is dominated by **T2/T3-claimed sources that are methodologically T5 (LDS compilations, legacy tree aggregations, personal GEDCOM files, online trees)**:
 
 | Pattern | genealogy | kindred | dry-cross | Total | Correct tier |
 |---|---:|---:|---:|---:|---|
@@ -692,6 +674,8 @@ The initial source-quality classifier (7 buckets fs_backfill/wt_profile/geni_mh/
 | **TOTAL** | 5044 | 530 | 938 | **6512** | — |
 
 Sub-bucket auto-fix is additive to the first-pass cleanup: extend `fix-evidence-quality.py` with `--only lds-t5-demote`, `--only legacy-nfs-demote`, `--only ancestry-tree-content-demote`, `--only ftw-file-demote`, `--only empty-remove`, etc. Runs after the first-pass buckets, applies same patch-log pattern.
+
+**Implementation note (T4 vs T5)**: although the table above marks most sub-buckets as methodologically T5, the actual implementation demotes to **T4** because the validator requires T5 sources to live in `leads_evaluated/`, not `evidence.sources/`. T4 is the lowest tier the validator allows for in-tree sources. If/when the validator is extended to permit T5 sources in `evidence.sources` with a flag, this rule should be revisited.
 
 **Key insight**: the initial classifier's `platform` field check is insufficient for Ancestry/Geni/MH content because the platform field reflects WHERE the source entry lives in tree.json (usually `familysearch` because sources came from FS harvest of those trees), not WHAT the source originally is. Content-based detection via citation regex is the more reliable signal.
 

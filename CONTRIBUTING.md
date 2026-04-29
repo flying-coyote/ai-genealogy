@@ -156,6 +156,8 @@ At the end of any session where you documented a new pattern in your local `LESS
 
 The script auto-detects the local lessons file (`docs/LESSONS_LEARNED.md`, `LESSONS_LEARNED.md`, `research/LEARNINGS.md`) and the shared lessons directory (`docs/lessons-shared/` symlink or `/path/to/ai-genealogy/lessons`). Pass `--local` or `--lessons-dir` to override.
 
+**Note on the format mismatch.** `promote-lessons.py --check` only matches the canonical `**Rule [CONFIRMED ×N] (captured YYYY-MM-DD): Title.**` format. Sister-project `LESSONS_LEARNED.md` files use incident-postmortem format and will return zero candidates regardless of cross-project confirmation status. This is by design — per-project `LESSONS_LEARNED` files are session postmortems; the cross-project lesson catalog is upstream. The promotion path is: (1) author writes the new pattern in upstream `lessons/PROVISIONAL.md` in canonical Rule format, (2) sister projects confirm in-session and document the experience in their own incident logs, (3) human reviews each project's incident log for confirmation evidence, (4) human edits upstream `PROVISIONAL.md → LESSONS.md`. A separate sub-gap: `lessons/PROVISIONAL.md` itself uses `## Heading` + `**Rule**:` body format, which the script's strict regex does not match. The script today is biased toward `LESSONS.md` format checks, not `PROVISIONAL.md` candidate detection.
+
 ---
 
 ## The Three Sister Projects
