@@ -22,8 +22,9 @@ Rules that the projects disagree on go to `lessons/CONTESTED.md` — not deleted
 In `LESSONS.md`, every rule follows this format:
 
 ```markdown
-**Rule [CONFIRMED ×N]: Short imperative title.** Explanation of the rule, what it prevents,
-and why it matters. Include a concrete example when the rule was discovered through a failure.
+**Rule [CONFIRMED ×N] (captured YYYY-MM-DD): Short imperative title.** Explanation of the rule,
+what it prevents, and why it matters. Include a concrete example when the rule was discovered
+through a failure.
 *(project1, project2)*
 ```
 
@@ -34,6 +35,8 @@ The confidence tag is:
 - `[CONTESTED]` — projects have contradictory guidance (full entry in CONTESTED.md)
 
 The *(project1, project2)* attribution at the end is optional for `[CONFIRMED ×3]` rules (all three projects), required for `[CONFIRMED ×2]` rules to show which two confirmed it.
+
+The `(captured YYYY-MM-DD)` field anchors revalidation. When a new Claude model ships or a lesson is touched after long inactivity, re-check whether the rule still holds against current platform behavior and current model behavior before treating it as confirmed. Lessons without a captured-on date should be dated when next edited; do not infer dates from git history alone, since edits may not coincide with the actual observation.
 
 ---
 
