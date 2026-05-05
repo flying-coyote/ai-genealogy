@@ -1,6 +1,29 @@
 # Provisional Patterns
 
-Patterns discovered in only one sister project. Plausible and worth knowing, but not yet cross-validated. These may be promoted to LESSONS.md once another project confirms them, or may turn out to be project-specific.
+Patterns discovered in only one sister project. Plausible and worth knowing, but not yet cross-validated. These may be promoted to LESSONS.md once another project confirmed them, or may turn out to be project-specific.
+
+---
+
+## Moving a `<ref>` inline does not fix a bad source
+
+**Source**: genealogy-kindred (2026-04-21 C2 batch / mentor feedback 2026-05-03)
+
+During a "dangling ref → inline" fix pass, refs citing WikiTree profiles and FamilySearch
+person-profile URLs were repositioned inline without fixing the source content. The format
+improved; the evidence quality did not. Three specific anti-patterns to catch before inlining:
+
+1. **WT/Geni profile as `<ref>`** — profiles are aggregations, not evidence. Move to "See Also",
+   find and cite the underlying document instead.
+2. **FS person-profile URL in `<ref>`** — `/tree/person/VITALS/XXXX` is navigation, not a
+   source. The citation must use the document ARK (`/ark:/61903/...`).
+3. **"Accessed DATE" with no named resource** — "accessed 28 Feb 2026" is not a citation;
+   it requires a document name, repository, and URL.
+
+Fix applied in `genealogy`: `_is_invalid_ref_source()` guard in `wt-contribution-dispatch.py`
+rejects these patterns at ref-block generation time. Run Bio Check (WikiTree Browser Extension)
+before saving any biography edit to catch these at the UI level.
+
+**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
 
 ---
 
@@ -738,4 +761,44 @@ The WT BE also ships a `BioCheckPerson` + `Biography` pipeline that validates st
 Also: the extension's `show_suggestions` feature consumes `plus.wikitree.com` JSON endpoints — our `scripts/wikitree-plus-fetch.py` (2026-04-22) hits the same backend. The extension adds the `appID=apiExtWbe` parameter per `docs/CallsTo wikitree.com.md`; our script does not yet (low priority).
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## Bulk-harvest false-positive signature: a 4-part filter beats notes-only
+
+**Source**: dry-cross (2026-05-05)
+
+The dry-cross harvest pattern marker `notes: "FS equivalent likely attached by community during Ancestry import"` matches 138 sources across 3,369 persons. As a false-positive signal it is far too broad — most of those 138 are correct records. A narrower 4-part filter catches the actual false positives:
+
+1. Tier 1 or 2 (where confidence damage occurs)
+2. Ancestry-only collection URL (`ancestry.com/search/collections/<id>/...`)
+3. EITHER: collection-level URL with no `/records/<id>` segment (placeholder citation, no specific record to verify) OR `(Ancestry hint)` suffix in title (untriaged harvest suggestion)
+4. Geographic mismatch — collection state appears in source title but is not in any of the person's life-event states OR census-residence states (the residence check is essential; migration history catches false positives in step 4 alone)
+
+In the dry-cross sweep, this filter narrowed 138 → 5 candidates. Of those 5, **2 were confirmed false positives** (1 via authenticated Ancestry fetch revealing a different subject, 1 via collection-level URL with no specific record); the other 3 were true matches (a Martin family living in Pacolet Spartanburg SC c.1900 between censuses — caught only when the residence-state check is added). False-positive rate per candidate after the narrow filter: ~40%, which is well within human-verification budget.
+
+**Demotion template (verified against 2 dry-cross cases):**
+
+```python
+src['tier'] = 4
+src['tier_audit'] = {
+    'previous_tier': 1,
+    'changed': '<date>',
+    'reason': '<specific evidence — actual record subject if auth-verified, or collection-only-URL rationale if placeholder>',
+    'verified_via': '<authenticated fetch | pattern signature + geographic analysis>',
+    'pattern_signature': '<which signature components matched>',
+    'actual_subject': '<actual person if known>',  # only if auth fetch
+}
+src['proves_previous'] = src.get('proves', [])
+src['proves'] = []
+src['notes'] = (src.get('notes','').strip() + ' | DEMOTED T1->T4 <date>: <one-line reason>').strip(' |')
+```
+
+Source is preserved (not deleted) for audit-trail purposes — same convention as the 2026-05-03 dry-cross demotions of Legacy NFS and aggregator T1s. Refresh `validation.confidence_audit.reason` on the person to reflect the post-demotion tier distribution and any confidence-ceiling implications.
+
+See `methodology/06-failure-modes.md#13` for the full case studies (Annie Mary Sanders @I712@; Sarah Bradford @I235@) and the verification workflow.
+
+**Caveat**: The signature is for *bulk-harvest* false positives specifically. Manually-attached sources, FS-only sources, and sources with specific record IDs but wrong-person attachments require different detection (e.g., name-mismatch checks against the person's `name_variants`, not just signature scanning).
+
+**Needs confirmation in**: genealogy, genealogy-kindred
 
