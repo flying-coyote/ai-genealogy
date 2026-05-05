@@ -160,9 +160,40 @@ Document this analysis in the journal. "Birth certificate names X as mother; 188
 
 ---
 
+## 13. Bulk-Harvest False-Positive Sources Through Name Collisions
+
+**What happened:** Bulk Ancestry/FS source harvest attached records whose actual subject was a different person sharing a partial-name match with the target. Two confirmed cases in dry-cross (2026-05-05):
+
+1. `@I712@` Annie Mary Sanders Martin (b.1907 Oglethorpe GA, d.1979 Baldwin GA, Methodist/Baptist family) had a Tier 1 source titled "Mary Sanders Martin, Massachusetts U.S. Boston Archdiocese Roman Catholic Sacramental Records, 1789-1920" (Ancestry coll 61585). Authenticated fetch revealed the actual record was for **Maria Martin née Galipeau**, French-Canadian, spouse Theodore Martin, child Leonem Martin. The name "Sanders" never appears in the actual record. The harvest's title "Mary Sanders Martin" was a fabrication assembled from the target's first name + married surname + the actual subject's middle.
+
+2. `@I235@` Sarah Bradford (b.~1724 Bladen NC, d.1782-1790 Irwin GA) had a Tier 1 source titled "Sarah Bradford, MA Compiled Birth Marriage Death Records 1700-1850 (Ancestry hint)" with a *collection-level URL* (`/search/collections/61401/`, no `/records/<id>`). No specific record was cited; the citation was a placeholder. The geographic mismatch (NC/GA colonial woman, MA collection) plus the absence of a specific record made the citation unverifiable as a true match.
+
+**Consequence:** False sources elevated `proves` claims that the records did not actually support. On `@I712@` the false source claimed `proves: ["birth"]`, contributing to the appearance that birth was independently corroborated when it was not. On `@I235@` the source claimed `proves: ["death_date", "death_place", "identity", "marriage"]` — a comprehensive claim with no actual record behind it. Confidence audits and downstream contributions inherit these inflated claims.
+
+**Pattern signatures:**
+- Title combines target's first+married name with someone else's middle/maiden, packaged to look like a unified identity.
+- Notes field contains "FS equivalent likely attached by community during Ancestry import" (a generic harvest-pattern marker — necessary but not sufficient on its own).
+- URL is at collection level (`/search/collections/<id>/`) with no `/records/<id>` segment, OR the record exists but auth-fetch reveals a different subject.
+- Geographic mismatch: collection state is not in any of the person's birth/death/burial places *and* not in any census-residence place. Migration history must be checked before declaring a state mismatch (e.g., Pacolet Spartanburg SC was a real residence for a NC Martin family between censuses; the filter has to reach into source-named places, not just life-event places).
+- "(Ancestry hint)" suffix in title — strong signal that a hint was uplifted to T1 without ever being triaged to a specific record.
+
+**Fix:** Demote false-positive T1s to T4 with a full `tier_audit` block, clear `proves[]`, preserve in `proves_previous[]`, and add a notes-field marker. Keep the source rather than deleting it — same audit-trail convention as the 2026-05-03 NFS / aggregator demotions in dry-cross. Refresh the person's `validation.confidence_audit` reason with the new tier distribution. The verification workflow:
+
+1. Grep tree.json for the pattern signature (collection-level URL + harvest notes + hint suffix).
+2. For each candidate, check geographic-state overlap including names mentioned in source titles (not just birth/death). Skip candidates where any source-state is in person-states.
+3. For each surviving candidate, authenticate to the source platform (Ancestry creds via the project's CDP browser) and fetch the actual record.
+4. If the actual subject differs from the tree person on first name AND surname AND parents/spouse/children, demote.
+5. If the URL is collection-level only (no record_id), the source is a placeholder — demote even without auth fetch, since there is no specific record to verify.
+
+**Detection method:** Add the signature scan to a periodic source-quality pass alongside the existing tier-audit script. The signature is narrow enough (false-positive rate per candidate ~1-in-5 in the dry-cross sweep, even after geographic filtering) that human verification remains cost-effective. False-positive sources are rare in absolute terms (2 confirmed of 138 broad candidates and 5 narrow candidates in dry-cross), but each one inflates downstream confidence claims invisibly until caught.
+
+**Why this differs from #7 (John Francis conflation):** #7 was wrong-person matching at *profile* level (entire FS profile attached to wrong tree person). #13 is wrong-person matching at *source* level (correct profile, but a hint or harvest pulled in records belonging to a different person of similar name). Detection and remediation differ — #7 requires re-identification of the profile; #13 is per-source surgery within an otherwise correct profile.
+
+---
+
 ## Pattern Recognition Across These Failures
 
-Looking across the twelve entries, most failures share one of three root causes:
+Looking across the thirteen entries, most failures share one of three root causes:
 
 **Missing a guard condition.** Deduplication by ARK but not title. Visited set omitted from BFS. Validator checking confidence but not source count. Each guard was added after the failure, not before. The lesson is to ask "what case does this not handle?" at design time.
 
