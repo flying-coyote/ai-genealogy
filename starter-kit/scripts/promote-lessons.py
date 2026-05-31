@@ -27,7 +27,7 @@ Usage:
 
 Run from the sister project root directory. The script auto-detects the shared
 lessons directory by looking for 'docs/lessons-shared/' symlink or falling back
-to '/home/jerem/ai-genealogy/lessons/'.
+to '~/ai-genealogy/lessons/'.
 """
 
 import argparse
@@ -51,7 +51,7 @@ DEFAULT_LOCAL_FILES = [
 
 DEFAULT_LESSONS_DIRS = [
     "docs/lessons-shared",            # symlink present
-    "/home/jerem/ai-genealogy/lessons",  # absolute fallback
+    os.path.expanduser("~/ai-genealogy/lessons"),  # absolute fallback
 ]
 
 SIMILARITY_THRESHOLD = 0.65  # fuzzy match cutoff for "same rule"
