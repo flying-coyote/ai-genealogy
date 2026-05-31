@@ -1,3 +1,8 @@
+---
+type: Methodology
+title: "Chapter 3: Research Workflow"
+---
+
 # Chapter 3: Research Workflow
 
 Research workflows degrade over time. A session starts with the best intentions, digs into one thread, and ends without closing the loop — no journal entry, no confidence update, no queue hygiene. The next session starts cold, re-covers the same ground, and adds a duplicate source. This chapter is about preventing that failure mode.

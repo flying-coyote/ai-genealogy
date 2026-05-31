@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "MyHeritage"
+---
+
 # MyHeritage
 
 Commercial genealogy platform with a records database, smart matching, and the OldNews.com newspaper archive. Acquired Geni in 2012 but operates independently.

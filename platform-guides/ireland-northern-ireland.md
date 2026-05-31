@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Ireland and Northern Ireland Research"
+---
+
 # Ireland and Northern Ireland Research
 
 Civil registration and church records for Ireland and Northern Ireland. Primary platforms: IrishGenealogy.ie (free) and PRONI (onsite).

@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Find A Grave Platform Guide"
+---
+
 # Find A Grave Platform Guide
 
 ## Overview

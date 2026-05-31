@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Chronicling America (Library of Congress)"
+---
+
 # Chronicling America (Library of Congress)
 
 Free public API for US newspapers 1789-1963. No login required.

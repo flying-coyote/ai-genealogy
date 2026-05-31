@@ -1,3 +1,8 @@
+---
+type: Methodology
+title: "Chapter 6: Failure Modes"
+---
+
 # Chapter 6: Failure Modes
 
 This chapter catalogs things that actually went wrong across three sister genealogy projects. The goal is not to document embarrassment but to build a warning system. Most of these failures were not obvious in advance. Several repeated across projects before the pattern was recognized.

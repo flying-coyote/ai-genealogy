@@ -1,3 +1,8 @@
+---
+type: RepoDoc
+title: "AI-Assisted Genealogy: Best Practices"
+---
+
 # AI-Assisted Genealogy: Best Practices
 
 A practical guide for using AI tools in genealogy research — built from hard-won lessons across three active family tree projects with 500+ research sessions.

@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Transkribus"
+---
+
 # Transkribus
 
 AI-powered transcription for historical handwriting. Primary genealogy use cases: German Kurrent script, 17th-19th century English secretary hand, pre-modern European scripts.

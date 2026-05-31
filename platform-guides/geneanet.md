@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Geneanet"
+---
+
 # Geneanet
 
 French genealogy platform with 9B+ indexed individuals, strong European church record coverage, and 7.9M+ grave photos. Acquired by Ancestry in August 2021 but operates as an independent subsidiary — no "Sign in with Ancestry," and Ancestry Premium does **not** grant Geneanet Premium.
