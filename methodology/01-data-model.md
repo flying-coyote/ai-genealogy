@@ -64,8 +64,35 @@ The instinctive data structure for a family tree is a nested hierarchy: a person
 | `child_ids` | list\[string\] | IDs of children |
 | `platform_ids` | object | External IDs by platform (see below) |
 | `validation` | object | Confidence, sources, concerns (see below) |
-| `research_status` | object | `{"status": "COMPLETE"\|"PARTIAL"\|"UNRESEARCHED"}` |
+| `research_status` | object | `{"status": "COMPLETE"\|"PARTIAL"\|"UNRESEARCHED"}` (tree-local vocabulary) |
+| `research_status_canonical` | string | Additive normalized 6-state status — see below. Derived from `research_status.status`; never authoritative. |
 | `notes` | string | Free text. Scan this before queuing for research. |
+
+---
+
+## Canonical Research Status
+
+The three sister trees independently evolved divergent `research_status.status`
+vocabularies (genealogy: 16 values; kindred: 11 including nulls; dry-cross: 13 including
+`PENDING`/`NEW`). To give Tolaria and cross-tree analysis one shared vocabulary without
+breaking the ~27 scripts that read and write the original strings, each person carries an
+**additive** `research_status_canonical` field. It is derived, never authoritative — the
+original `research_status` object is left untouched.
+
+Six canonical states, with the mapping applied 2026-05-31:
+
+| Canonical | Source values folded in |
+| --- | --- |
+| `NOT_STARTED` | UNRESEARCHED, NOT_STARTED, NEW, PENDING, NEW_PERSON, DISCOVERED, COLLATERAL_LOW_PRIORITY, DISCONNECTED, LIVING_PERSON, NEW_COLLATERAL, null/missing |
+| `IN_PROGRESS` | IN_PROGRESS, ACTIVE, PARTIALLY_COMPLETE, NEEDS_HUMAN_BROWSE, NEW_DISPUTED |
+| `RESEARCHED` | RESEARCHED, RESEARCHED_ONLINE, PHASE_3_VALIDATED, PARENTS_KNOWN, PARENTS_DOCUMENTED, PARENTS_VERIFIED, REMEDIATED |
+| `EXHAUSTED_ONLINE` | EXHAUSTED_ONLINE |
+| `BRICK_WALL` | BRICK_WALL, BRICK_WALL_RESEARCHED |
+| `COMPLETE` | COMPLETE, RESOLVED, RESOLVED_ERRONEOUS |
+
+Known caveat: kindred stored confidence values (`VERIFIED`, `PROBABLE`) in the status field
+— a data bug. These are inferred to `RESEARCHED`/`IN_PROGRESS` here, but should be corrected
+at the source. The mapping lives in each tree under the migration commit (2026-05-31).
 
 ---
 
