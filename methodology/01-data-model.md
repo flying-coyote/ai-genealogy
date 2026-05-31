@@ -1,3 +1,8 @@
+---
+type: Methodology
+title: "Chapter 1: Data Model"
+---
+
 # Chapter 1: Data Model
 
 A genealogy project that runs AI-assisted workflows needs a data model that can be queried, validated, and patched by code — not just browsed by a human. This chapter covers how to structure that model, why flat arrays beat nested hierarchies, and what every field in a well-designed person record should carry.

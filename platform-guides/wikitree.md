@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "WikiTree Platform Guide"
+---
+
 # WikiTree Platform Guide
 
 ## Overview

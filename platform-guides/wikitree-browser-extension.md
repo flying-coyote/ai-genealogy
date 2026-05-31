@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "WikiTree Browser Extension (WT BE) — Capability Reference"
+---
+
 # WikiTree Browser Extension (WT BE) — Capability Reference
 
 Centralized reference for the official WikiTree Browser Extension. Used

@@ -1,3 +1,8 @@
+---
+type: Methodology
+title: "Chapter 2: Evidence Standards"
+---
+
 # Chapter 2: Evidence Standards
 
 Genealogical proof is not about accumulating sources — it is about reasoning from evidence. This chapter covers the Genealogical Proof Standard, how to apply it in an AI-assisted workflow, how confidence levels map to evidence, and the specific rules that govern what gets contributed to external platforms.

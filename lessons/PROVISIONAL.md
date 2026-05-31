@@ -1,3 +1,8 @@
+---
+type: Lesson
+title: "Provisional Patterns"
+---
+
 # Provisional Patterns
 
 Patterns discovered in only one sister project. Plausible and worth knowing, but not yet cross-validated. These may be promoted to LESSONS.md once another project confirmed them, or may turn out to be project-specific.

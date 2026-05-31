@@ -1,3 +1,8 @@
+---
+type: Lesson
+title: "Genealogy AI Best Practices: Confirmed Lessons"
+---
+
 # Genealogy AI Best Practices: Confirmed Lessons
 
 Rules confirmed across the sister projects. Confidence tags indicate how many projects have validated each rule:

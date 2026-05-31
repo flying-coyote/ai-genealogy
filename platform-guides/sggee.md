@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "SGGEE"
+---
+
 # SGGEE
 
 Society for German Genealogy in Eastern Europe — Calgary-based society maintaining databases of Germans who settled in Russian Poland, Volhynia (Ukraine), and surrounding regions. Core coverage: 1800–1918. Partner in IGGP (International German Genealogy Partnership). Subscription-based.

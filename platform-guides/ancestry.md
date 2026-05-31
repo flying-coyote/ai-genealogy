@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Ancestry Platform Guide"
+---
+
 # Ancestry Platform Guide
 
 ## Overview

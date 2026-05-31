@@ -1,3 +1,8 @@
+---
+type: Lesson
+title: "Contested Rules"
+---
+
 # Contested Rules
 
 Rules where the sister projects have contradictory guidance, or where context makes the "right" answer different depending on circumstances.

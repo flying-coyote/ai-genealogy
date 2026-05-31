@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Polish Genealogy Research Portals"
+---
+
 # Polish Genealogy Research Portals
 
 Free and subscription databases for Polish vital records, parish registers, and state archives.

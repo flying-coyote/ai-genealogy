@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Digitized Books and Archives"
+---
+
 # Digitized Books and Archives
 
 Free access to out-of-copyright genealogy books, county histories, and compiled records. Platforms: Archive.org, Google Books, HathiTrust.

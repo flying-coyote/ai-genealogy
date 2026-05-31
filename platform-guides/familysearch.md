@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "FamilySearch Platform Guide"
+---
+
 # FamilySearch Platform Guide
 
 ## Overview

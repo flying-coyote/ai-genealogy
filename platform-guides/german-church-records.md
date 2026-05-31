@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "German Church Records: Archion and Matricula"
+---
+
 # German Church Records: Archion and Matricula
 
 Digitized German and Central European parish registers, primarily Lutheran and Catholic.

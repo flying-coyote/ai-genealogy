@@ -1,3 +1,8 @@
+---
+type: PlatformGuide
+title: "Geni"
+---
+
 # Geni
 
 Collaborative single World Family Tree (207M+ profiles). Not a records platform — purely a tree platform. Owned by MyHeritage since 2012 but operates independently: separate account, separate subscription.
