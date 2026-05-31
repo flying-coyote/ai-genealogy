@@ -63,9 +63,9 @@ This guide is distilled from three parallel genealogy projects:
 
 | Project | Family line | Size | Focus |
 |---|---|---|---|
-| `genealogy` | Paternal direct line | ~3,200 persons, Gen 2-21 | Deep pedigree, FS lineage extension |
-| `genealogy-kindred` | Maternal direct line | ~430 persons, Gen 2-14 | High-leverage audit patterns |
-| `genealogy-dry-cross` | Multi-lineage (4 primary lines) | ~2,700 persons, Gen 1-16 | Multi-lineage convergence, scope control |
+| `genealogy` | Paternal direct line | ~5,770 persons; direct lines ~Gen 2-21, deeper collateral recorded | Deep pedigree, FS lineage extension |
+| `genealogy-kindred` | Maternal direct line | 950 persons, Gen 2-15 | High-leverage audit patterns |
+| `genealogy-dry-cross` | Multi-lineage (4 primary lines) | 3,425 persons, Gen 1-16 | Multi-lineage convergence, scope control |
 
 All three use the same methodology with the same evidence standards. Lessons discovered in one project are cross-validated against the others before being marked `[CONFIRMED]`. Rules that the projects dispute are documented in [`lessons/CONTESTED.md`](lessons/CONTESTED.md).
 

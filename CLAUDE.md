@@ -10,7 +10,7 @@ This file governs editing **this repository** (`ai-genealogy`). It is *not* the 
 
 ## Model version
 
-Lessons in `lessons/LESSONS.md` and prose in `methodology/` were captured on Claude `opus-4-6` and `opus-4-7` sessions (Opus 4.6 and Opus 4.7). When a new Claude model ships, lessons should be revalidated before being treated as still-confirmed — see the captured-on-date convention in `CONTRIBUTING.md` ("Rule Format" section).
+Lessons in `lessons/LESSONS.md` and prose in `methodology/` were captured across Claude `opus-4-6`, `opus-4-7`, and now `opus-4-8` sessions (Opus 4.6 / 4.7 / 4.8). When a new Claude model ships, lessons should be revalidated before being treated as still-confirmed — see the captured-on-date convention in `CONTRIBUTING.md` ("Rule Format" section).
 
 ## Evidence vocabulary used in this repo
 
