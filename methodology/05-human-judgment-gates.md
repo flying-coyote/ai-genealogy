@@ -1,3 +1,8 @@
+---
+type: Methodology
+title: "Chapter 5: Human Judgment Gates"
+---
+
 # Chapter 5: Human Judgment Gates
 
 Automation accelerates genealogy research. It does not replace judgment. This chapter is about the decisions that require a human — not because the technology can't produce an answer, but because the answer won't be defensible without one.

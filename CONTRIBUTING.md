@@ -1,3 +1,8 @@
+---
+type: RepoDoc
+title: "Contributing to AI Genealogy Best Practices"
+---
+
 # Contributing to AI Genealogy Best Practices
 
 This repository is distilled from three active genealogy projects. Lessons are promoted here only after cross-project validation. This document describes how to add, update, and contest rules.

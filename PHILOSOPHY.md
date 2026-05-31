@@ -1,3 +1,8 @@
+---
+type: Philosophy
+title: "Philosophy: AI-Assisted Genealogy"
+---
+
 # Philosophy: AI-Assisted Genealogy
 
 ## Why AI and genealogy are a good fit

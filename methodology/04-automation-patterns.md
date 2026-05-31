@@ -1,3 +1,8 @@
+---
+type: Methodology
+title: "Chapter 4: Automation Patterns"
+---
+
 # Chapter 4: Automation Patterns
 
 The core workflow is a four-phase pipeline: discovery, harvest, validate, contribute. Each phase produces artifacts consumed by the next. No phase writes directly to an external platform without human review. Understanding where the automation ends and where human judgment begins is the whole game.
