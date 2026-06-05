@@ -117,3 +117,15 @@ For a given research target, search in this order before moving to the next plat
 5. Chronicling America (newspapers 1789–1963, LOC API)
 
 Document negative searches. A confirmed negative at Ancestry (exhaustive search, no results) is evidence of absence that saves future researchers the same time.
+
+## Exporting the tree as GEDCOM (pre-cancellation backup)
+
+If subscription access is ending, export each Ancestry tree to GEDCOM first — it is the most complete and irreplaceable backup, and it does not require an active subscription to download.
+
+Steps (browser / CDP): Tree → **Settings** (`/family-tree/tree/<treeId>/settings`) → **"Export tree"** → confirm **"Export"** in the dialog. Generation is asynchronous and server-side ("Generating a GEDCOM file... (N% completed)") and **continues even if you navigate away** — so kick off all trees, then come back. When ready, a **"Download your GEDCOM file"** link appears, pointing at an authenticated `/api/media/retrieval/...` URL. The download is a **ZIP** (`<TreeName>.zip`) containing one `.ged`; the CDP browser saves it to `~/Downloads`. `unzip` may be missing on the host — extract with Python `zipfile`.
+
+**Why it matters most:** the Ancestry working tree is frequently *much* larger than a curated local `tree.json`. In one case the Ancestry tree held ~21,855 individuals versus 5,770 in the maintained tree.json — a ~3.8× gap. The GEDCOM therefore preserves thousands of people and their attached Ancestry source citations that the curated dataset never imported. Treat the final pre-cancellation GEDCOM as the frozen reference for "what did Ancestry have."
+
+## DNA / ThruLines: verify a test is linked first
+
+ThruLines and DNA Matches exist only when the login has a linked AncestryDNA test. Confirm before budgeting capture time: an account with no test shows "Register a kit / Buy now" at `/dna/` and 404s on `/dna/matches`. No test ⇒ no ThruLines to capture, and any DNA/Pro-Tools expiry sub-deadline is irrelevant.
