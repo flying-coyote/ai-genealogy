@@ -1,0 +1,37 @@
+name: docs
+
+# Lightweight, dependency-free validation for the methodology hub.
+# This is repo-maintenance CI, not an agent harness — it adds no hooks,
+# skills, or MCP servers (see CLAUDE.md). It only reads and validates docs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "starter-kit/scripts/**"
+      - ".github/**"
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "starter-kit/scripts/**"
+      - ".github/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate cross-references and frontmatter
+        run: python3 .github/scripts/check-docs.py
+
+      - name: Validate the lessons catalog
+        run: python3 starter-kit/scripts/lint-lessons.py
+
+      - name: Byte-compile starter-kit scripts
+        run: python3 -m compileall -q starter-kit/scripts .github/scripts
