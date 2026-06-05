@@ -41,7 +41,9 @@ The confidence tag is:
 
 The *(project1, project2)* attribution at the end is optional for `[CONFIRMED ×3]` rules (all three projects), required for `[CONFIRMED ×2]` rules to show which two confirmed it.
 
-The `(captured YYYY-MM-DD)` field anchors revalidation. When a new Claude model ships or a lesson is touched after long inactivity, re-check whether the rule still holds against current platform behavior and current model behavior before treating it as confirmed. Lessons without a captured-on date should be dated when next edited; do not infer dates from git history alone, since edits may not coincide with the actual observation.
+The `(captured YYYY-MM-DD)` field anchors revalidation. When a new Claude model ships or a lesson is touched after long inactivity, re-check whether the rule still holds against current platform behavior and current model behavior before treating it as confirmed.
+
+Going forward, capture the real observation date at the moment a rule is written — a later edit date is not a substitute, since edits may not coincide with the actual observation. The rules imported in the 2026-04-15 repo seed predate this repo (they were migrated from sister-project logs) and carry no original observation date; these were one-time anchored to `2026-04-15`, the commit that first introduced them here. That introduction date is the best available anchor — it is the *earliest* appearance in the repo, not an arbitrary later edit — and means "validated as of the seed import," not "first observed on that day." Do not re-stamp a rule's captured date on routine edits; only set it once, when the rule is first recorded undated.
 
 ---
 
@@ -150,7 +152,7 @@ Each project's own `LESSONS_LEARNED.md` / `LEARNINGS.md` stays as the local work
 
 At the end of any session where you documented a new pattern in your local `LESSONS_LEARNED.md`:
 
-1. Run: `python3 /home/jerem/ai-genealogy/starter-kit/scripts/promote-lessons.py --check`
+1. Run: `python3 /path/to/ai-genealogy/starter-kit/scripts/promote-lessons.py --check`
 2. Review the output: it classifies each rule as ALREADY_CONFIRMED, CONFIRM_THIS, NEW_PROVISIONAL, or SKIP
 3. **CONFIRM_THIS**: edit `lessons/LESSONS.md` directly — change `[PROVISIONAL]` → `[CONFIRMED ×2]` and add attribution
 4. **NEW_PROVISIONAL**: run with `--stage` to append the entry to `lessons/PROVISIONAL.md`
