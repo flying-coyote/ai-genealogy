@@ -44,8 +44,10 @@ from difflib import SequenceMatcher
 
 DEFAULT_LOCAL_FILES = [
     "docs/LESSONS_LEARNED.md",
+    "research/LESSONS_LEARNED.md",
     "LESSONS_LEARNED.md",
     "research/LEARNINGS.md",
+    "docs/LEARNINGS.md",
     "LEARNINGS.md",
 ]
 
@@ -73,15 +75,27 @@ def extract_rules(text: str) -> list[dict]:
     Returns list of dicts with keys: title, body, full_text, tag.
     """
     rules = []
-    # Match pattern: **Rule [TAG]: Title.** Body text
+    # Two accepted formats:
+    #   A. **Rule [TAG]: Title.** Body        (colon + title INSIDE the bold)
+    #   B. **Rule** [TAG]: Title. Body        (colon + title AFTER the bold)
     pattern = re.compile(
-        r"\*\*Rule(?:\s+(\[.*?\]))?\s*:?\s*([^*]+?)\*\*\s*([^\n].*?)(?=\n\n|\n\*\*Rule|\Z)",
+        r"\*\*Rule\b"                          # **Rule
+        r"(?:\s*(\[[^\]]*\]))?"                # optional [tag] inside bold
+        r"\s*:?\s*"                            # optional colon inside bold
+        r"([^*\n]*?)"                          # optional title inside bold (may be empty)
+        r"\*\*"                                # closing **
+        r"\s*(?:(\[[^\]]*\]))?\s*:?\s*"        # optional [tag] and/or colon AFTER bold
+        r"(.+?)"                               # body / rule text
+        r"(?=\n\s*\n|\n[-*]?\s*\*\*Rule|\Z)",  # stop at blank line or next rule
         re.DOTALL,
     )
     for m in pattern.finditer(text):
-        tag = (m.group(1) or "").strip()
-        title = m.group(2).strip().rstrip(".")
-        body = m.group(3).strip()
+        tag = (m.group(1) or m.group(3) or "").strip()
+        title = (m.group(2) or "").strip().rstrip(".:").strip()
+        body = (m.group(4) or "").strip()
+        if not title:
+            # Format B: no bolded title — derive one from the first line of the body
+            title = body.splitlines()[0].strip().rstrip(".:")[:120] if body else ""
         rules.append(
             {
                 "tag": tag,

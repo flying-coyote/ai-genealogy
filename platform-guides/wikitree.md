@@ -40,10 +40,12 @@ WikiTree enforces account-level edit rate limits. If you are contributing from m
 |-------|-------|
 | Edits per day | 50 |
 | Edits per rolling 7 days | 150 |
-| Minimum time between edits | 120 seconds |
-| Edits per 30-minute window | 8 max |
+| Minimum time between edits | 30 seconds (human-rate floor) |
+| Edits per 30-minute window | 16 max |
 
-The 120-second minimum is the anti-automation signal WikiTree monitors. Enforce it unconditionally. Violations appear to trigger account flags; at least one account was blocked after batch operations that violated this limit.
+These are conservative starting defaults. The minimum delay is a **self-imposed human-rate floor, not a value WikiTree publishes or monitors** — the genealogy project ran 120s, then 10s, then settled on 30s (2026-05-11) with no platform signal either way. The daily/weekly caps are likewise self-imposed; a long-running supervised campaign reconciled all three sister projects to **350/day and 600/rolling-7-day** (2026-06-04). Pick one cap and keep every sister project's `wt-rate-check.py` identical, since they share one lockfile — a divergent fork means the enforced budget depends on which script happens to run. Account *blocks* (Error 2562) are real and durable (48+ days, account-wide), but they followed genuine batch-automation bursts, not any specific delay value; the safe rule is "all edits via the browser UI, paced, and logged."
+
+**Separate platform-side limit — daily comment cap (~60/day):** WikiTree caps talk-page *comments* (the "Post a comment" action) independently of the edit budget. When hit, the submit silently no-ops and `#commentPostStatus` shows "After attacks by spammers we were forced to place a limit on the number of comments per day... post in 24 hours or use a Private Message or e-mail." Working assumption ~60/rolling-24h (first seen ~30, later revised up). Check `#commentPostStatus` after every comment submit to detect the silent failure. This constrains courtesy-comment campaigns (pre-edit manager notifications), not bio edits.
 
 The rate checker reads and writes a shared log file at `~/.wikitree-contribution-log.jsonl` (not in any project repo — stored in home dir to be shared across projects).
 
@@ -169,7 +171,7 @@ For batch biography updates, a standalone Node.js/Puppeteer script connecting to
 4. Apply the modification
 5. Submit the form
 6. Log the successful edit to the shared rate-checker log (`~/.wikitree-contribution-log.jsonl`)
-7. Wait ≥120 seconds before the next edit
+7. Wait ≥30 seconds (the configured human-rate floor) before the next edit
 
 This approach has been tested at 660 profiles in approximately 8 minutes (with the minimum delay enforced, that bottleneck limits throughput far more than the actual edit operations).
 
@@ -196,8 +198,8 @@ When a WikiTree account triggers Error 2562 (automation rate limit), the block i
 **Mitigation pattern**: use a secondary account for contributions (Wiley-6998 in the genealogy project), assigned to a mentor for supervision, with all edits via browser UI (no automation). Enforce per-account rate limits:
 - 50 edits/day
 - 150 edits/rolling-7-days
-- ≥120s minimum between edits
-- ≤8 edits per 30-minute window
+- ≥30s minimum between edits (self-imposed floor; see Rate Limiter section)
+- ≤16 edits per 30-minute window
 
 Shared lockfile pattern: `~/.wikitree-contribution-log.jsonl` enforced by `scripts/wt-rate-check.py`. This is account-agnostic — protects the whole family of sister-project accounts using the same IP.
 
