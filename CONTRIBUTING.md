@@ -167,10 +167,6 @@ The script auto-detects the local lessons file (`docs/LESSONS_LEARNED.md`, `LESS
 
 ## The Three Sister Projects
 
-| Project | Primary line | Size |
-|---|---|---|
-| `genealogy` | Paternal direct line | ~3,200 persons, Gen 2-21 |
-| `genealogy-kindred` | Maternal direct line | ~430 persons, Gen 2-14 |
-| `genealogy-dry-cross` | Multi-lineage (4 primary lines) | ~2,700 persons, Gen 1-16 |
+For the project roster and current sizes, see the table in [`README.md`](README.md#the-three-sister-projects). That table is the single source of truth — person counts change every research session, so they are kept in one place rather than restated here.
 
 All three use the same methodology and evidence standards. When a rule appears in all three independently, it's confirmed as genuinely cross-project.
