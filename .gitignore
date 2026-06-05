@@ -1,0 +1,6 @@
+# Python bytecode (e.g. from `compileall` in CI or local script runs)
+__pycache__/
+*.py[cod]
+
+# Local editor / OS cruft
+.DS_Store

@@ -57,7 +57,7 @@ Then modify your `scripts/chrome-cdp.sh` to auto-select Chromium when the
 dist is present:
 ```bash
 CHROME="/opt/google/chrome/chrome"
-CHROMIUM="/home/jerem/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome"
+CHROMIUM="$HOME/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome"
 EXT_DIR="/home/<user>/<project>/vendor/wikitree-be-dist"
 
 EXT_FLAGS=()
@@ -368,7 +368,7 @@ All three sister projects share the same extension install: each has its
 own `vendor/wikitree-be-dist/` built from the same upstream commit (update
 all three together when upgrading). Each project's `scripts/chrome-cdp.sh`
 has its own `USER_DATA_DIR` pointing to a distinct Chrome profile
-(`/home/jerem/.cache/ms-playwright/<project>-chrome`), so they don't share
+(`~/.cache/ms-playwright/<project>-chrome`), so they don't share
 extension storage. Extension options must be configured once per
 user-data-dir.
 

@@ -647,7 +647,7 @@ CDP workarounds that do NOT work on stable Chrome WebSocket:
 - Feature flags `DeveloperExtensionAPI`, `ExtensionsCdpSupport` don't unlock the method
 
 **Working alternatives**:
-1. **Playwright's bundled Chromium for Testing** (e.g. `/home/jerem/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome` = Chrome/145.0.7632.6). Accepts `--load-extension` normally. User-data-dir format is Chrome-compatible — cookies and session state preserve across the switch.
+1. **Playwright's bundled Chromium for Testing** (e.g. `~/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome` = Chrome/145.0.7632.6). Accepts `--load-extension` normally. User-data-dir format is Chrome-compatible — cookies and session state preserve across the switch.
 2. Chrome Beta/Dev/Canary binaries (not tested; documented as accepting the flag).
 3. Enterprise policy `ExtensionSettings` with `installation_mode: force_installed` + Web Store extension ID (requires sudo to write `/etc/opt/chrome/policies/managed/`).
 
