@@ -63,11 +63,6 @@ SIMILARITY_THRESHOLD = 0.65  # fuzzy match cutoff for "same rule"
 # Rule extraction
 # ---------------------------------------------------------------------------
 
-RULE_PATTERN = re.compile(
-    r"\*\*Rule(?:\s+\[.*?\])?\s*:?\s*(.*?)\*\*\s*(.+?)(?=\n\n|\n\*\*Rule|\Z)",
-    re.DOTALL,
-)
-
 
 def extract_rules(text: str) -> list[dict]:
     """
@@ -75,23 +70,30 @@ def extract_rules(text: str) -> list[dict]:
     Returns list of dicts with keys: title, body, full_text, tag.
     """
     rules = []
-    # Two accepted formats:
-    #   A. **Rule [TAG]: Title.** Body        (colon + title INSIDE the bold)
-    #   B. **Rule** [TAG]: Title. Body        (colon + title AFTER the bold)
+    # Two accepted formats, each optionally carrying a "(captured YYYY-MM-DD)"
+    # segment between the [TAG] and the colon (the canonical LESSONS.md form):
+    #   A. **Rule [TAG] (captured DATE): Title.** Body   (title INSIDE the bold)
+    #   B. **Rule** [TAG] (captured DATE): Title. Body   (title AFTER the bold)
+    captured = r"(?:\s*\(captured\s+\d{4}-\d{2}-\d{2}\))?"  # optional, skipped
     pattern = re.compile(
         r"\*\*Rule\b"                          # **Rule
         r"(?:\s*(\[[^\]]*\]))?"                # optional [tag] inside bold
+        + captured +                           # optional (captured DATE) inside bold
         r"\s*:?\s*"                            # optional colon inside bold
         r"([^*\n]*?)"                          # optional title inside bold (may be empty)
         r"\*\*"                                # closing **
-        r"\s*(?:(\[[^\]]*\]))?\s*:?\s*"        # optional [tag] and/or colon AFTER bold
+        r"\s*(?:(\[[^\]]*\]))?"                # optional [tag] AFTER bold
+        + captured +                           # optional (captured DATE) after bold
+        r"\s*:?\s*"                            # optional colon after bold
         r"(.+?)"                               # body / rule text
         r"(?=\n\s*\n|\n[-*]?\s*\*\*Rule|\Z)",  # stop at blank line or next rule
         re.DOTALL,
     )
+    # Belt-and-suspenders: strip a captured-date prefix if one still leads the title.
+    captured_prefix = re.compile(r"^\(captured\s+\d{4}-\d{2}-\d{2}\)\s*:?\s*")
     for m in pattern.finditer(text):
         tag = (m.group(1) or m.group(3) or "").strip()
-        title = (m.group(2) or "").strip().rstrip(".:").strip()
+        title = captured_prefix.sub("", (m.group(2) or "").strip()).rstrip(".:").strip()
         body = (m.group(4) or "").strip()
         if not title:
             # Format B: no bolded title — derive one from the first line of the body
