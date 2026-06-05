@@ -197,8 +197,10 @@ Contribution is always staged. Nothing writes to an external platform as a side 
 - The 120s minimum is the core anti-automation signal. It exists to keep WikiTree from flagging the account.
 
 **Ancestry:**
-- Source hint acceptance requires human review via the UI. No batch acceptance via API.
-- Internal hints API is cookie-based and useful for programmatic extraction of hint metadata, but the actual accept/decline action happens in the browser.
+- There is no accept/decline API — the action happens in the browser. But hint acceptance *can* be batched by driving the browser with a collection-registry classifier (see the Ancestry platform guide, "Automated Hint Triage & Acceptance"): known record collections auto-accept, member trees and photos are ignored by URL pattern before any lookup, and unrecognized collections are flagged MANUAL and never blind-accepted. The human-judgment gate moves from per-hint identity confirmation to per-collection-type registry curation — a far smaller, more stable surface, and one you can cover with offline classifier tests.
+- The accept attaches the record on Ancestry's side, not in local `tree.json`; a GEDCOM re-export after the run is the durable capture.
+- The internal JSON hints API now returns empty (deprecated as of 2026-06); read hint state from the rendered hint pages instead.
+- When subscription access is ending, capture order matters: drive the accept run by a worklist of persons with confirmed pending hints (most-hits-first), not by generation. Generation order front-loads the closest, most recent relatives, who are usually already well-sourced, so the perishable high-value captures on the deeper line land last — exactly backwards when a deadline may cut the run short.
 
 ## Quality Metrics (Defense Against Volume Drift)
 
