@@ -81,35 +81,6 @@ The human judgment doesn't disappear; it moves up a level, from "is this the rig
 
 ---
 
-## Playwright: Ignore Button Re-query Bug
-
-When automating "ignore all" or "click all X buttons" operations, `page.$('button.ignoreButton')` re-queries the live DOM after each click. After clicking the first button, the DOM updates, but the selector finds what appears to be the same button (now in a different state) and clicks it again. This produces incorrect behavior and may click the same button multiple times.
-
-**Fix**: Use `page.$$('button.ignoreButton')` once to collect all element handles into an array before any clicks, then iterate the handle array:
-
-```javascript
-const buttons = await page.$$('button.ignoreButton');
-for (const btn of buttons) {
-  await btn.click();
-}
-```
-
-This pattern applies to any "click all matching elements" operation in Playwright on Ancestry (or any React-rendered page where DOM state changes on interaction).
-
----
-
-## React Combobox Date/Place Fields
-
-Ancestry uses React-controlled inputs for date and place fields. Setting `element.value = '...'` and dispatching an `input` event sets the DOM value visibly in the UI, but does NOT update the underlying React state. When you save, the old value persists — the React component ignores the DOM mutation.
-
-**What works for plain text fields** (first name, last name): JS setter + `dispatchEvent('input')` updates React state correctly.
-
-**What fails for combobox date/place fields**: Same approach does not update React state.
-
-**Fix for combobox fields**: Use Playwright native `browser_click` on the field to focus it, then `browser_type` to enter the value character by character. This triggers the actual keyboard event handlers React is listening for, and the state updates correctly.
-
----
-
 ## County Organization Date Anachronism
 
 County-level birthplace data from member tree imports frequently contains anachronisms. A person described as "Born in Daviess County, KY" in 1810 is impossible — Daviess County was organized in 1815. The place existed, but the county didn't.

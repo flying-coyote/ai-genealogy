@@ -112,16 +112,6 @@ Data is assigned a source code and merged at the next database update cycle.
 
 ---
 
-## SPA Loading Warning
-
-SGGEE uses Nuxt.js. Pages display "Loading..." for 3–5 seconds after navigation before results render. In Playwright or any browser automation:
-
-- Always wait for the loading indicator to disappear before reading results or interacting with elements.
-- Prefer direct URL navigation over clicking sidebar links — the sidebar can intercept clicks intended for result cards.
-- Do not assume the page is ready immediately after `page.goto()` returns.
-
----
-
 ## Evidence Tiers
 
 | Source | Tier | Notes |
