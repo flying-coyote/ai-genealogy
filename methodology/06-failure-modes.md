@@ -215,7 +215,7 @@ Document this analysis in the journal. "Birth certificate names X as mother; 188
 
 ## Pattern Recognition Across These Failures
 
-Looking across the thirteen entries, most failures share one of three root causes:
+Looking across the fourteen entries, most failures share one of three root causes:
 
 **Missing a guard condition.** Deduplication by ARK but not title. Visited set omitted from BFS. Validator checking confidence but not source count. Each guard was added after the failure, not before. The lesson is to ask "what case does this not handle?" at design time.
 

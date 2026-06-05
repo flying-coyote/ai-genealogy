@@ -151,3 +151,60 @@ A tree where every claim is traceable to a primary source is more valuable than 
 The skip list in the lineage extension loop exists to enforce this. When a person hits a stop signal (Tier-5-only sources on the claimed parent, no primary records), they are skipped and not retried automatically. The skip list is not failure — it is the correct outcome for cases where the evidence is not yet sufficient.
 
 Accepting a Tier 5 parent to fill a gap doesn't end the research question. It adds a wrong answer that now has to be undone when better evidence surfaces.
+
+---
+
+## Worked Case Studies
+
+The sections above describe each gate in isolation. These three cases show a gate in action end to end — the situation, what the automation produced, what the human checked, the decision, and the documentation that makes the decision defensible. The documentation is the part most often skipped, so each case ends with the actual artifact written to the record. All three are drawn from incidents in [Chapter 6](06-failure-modes.md).
+
+### Case 1 — Two credible birth years (Evidence Weight gate)
+
+**Situation.** A man's WWI draft registration card gives a birth year of 1895. The 1900 census, enumerated when he was a child, implies 1897. Both are T1–T2 sources.
+
+**What the automation produced.** The confidence recalculation surfaced a conflict and stopped. It cannot rank the two — both are high-tier, both are internally consistent.
+
+**The gate.** A human evaluates the *informant* for each source, not the tier. The draft card is self-reported by the registrant, who had a direct interest in the year being right (exemption brackets). The 1900 census year was reported by whoever answered the enumerator — possibly a parent estimating, possibly a neighbor. The draft card wins here — but the reasoning, not the rule, is what makes it defensible. Documenting "automation chose 1895" would not satisfy GPS Element 4.
+
+**Decision & documentation.** Set the birth year to 1895 and record the conflict resolution so a future researcher (or a future session) inherits the reasoning, not just the answer:
+
+```json
+"corrections_applied": [{
+  "field": "birth.year",
+  "from": 1897, "to": 1895,
+  "conflict": "1900 census implies 1897; WWI draft card states 1895",
+  "resolution": "Draft card self-reported by registrant with direct interest in accuracy (exemption brackets); 1900 census year is third-party estimate of a child's age. Draft card preferred as informant-superior.",
+  "gps_element": 4
+}]
+```
+
+### Case 2 — A T1 record that names the wrong mother (Conflict Resolution gate)
+
+**Situation.** A delayed birth certificate, filed 30 years after the birth, names a woman as the mother. It looks like a clean T1 record identifying a parent (failure mode #12).
+
+**What the automation produced.** A staged patch setting `mother_id` to the named woman at PROBABLE confidence, sourced to the certificate.
+
+**The gate.** A delayed certificate recalls household composition decades later, not the facts at the birth event. The rule: for any certificate filed more than five years after the event, cross-check the named parent against the *contemporary* census. The census nearest the birth shows a different wife in the household; the named "mother" does not appear, and a death record places the biological mother as deceased shortly after the birth. The certificate named the stepmother — the household mother at filing time.
+
+**Decision & documentation.** Reject the patch, link the biological mother from the contemporary evidence, and write the analysis chain so the rejection is auditable rather than a silent drop:
+
+```json
+"notes": "Delayed birth cert (filed +30y) names Stepmother as mother. 1880 census (nearest birth) shows different wife in household; biological mother's death record predates the cert filing. Delayed cert reflects household at filing, not at birth. mother_id set from census + death record, not from the certificate."
+```
+
+### Case 3 — A 12-link chain to a medieval noble (Pre-1700 gate)
+
+**Situation.** A lineage-extension candidate offers a path to a 14th-century nobleman: twelve consecutive FS/Geneanet profiles, each linking to the next. The endpoint is impressively documented at the *dynasty* level.
+
+**What the automation produced.** Each individual link passed the automated floor (parent birth year plausible, not younger than the child), so the loop staged the chain.
+
+**The gate.** Tier-5 density is not evidence — twelve trees citing each other is twelve copies of one unverified claim (the circular-citation ecosystem). The standard for pre-1700 is explicit: FS/Ancestry/Geneanet/personal sites are prohibited as sources and serve only as finding aids. At least one link must trace to an original document — a parish register, will, or court record — and the specific profile being linked must carry its own primary sources, not merely other profiles citing it.
+
+**Decision & documentation.** Do not apply the chain. Stop at the last link backed by a primary source, leave the parent field null above it, and record why the gap is correct so the same chain is not re-proposed next session:
+
+```json
+"notes": "Pre-1700 chain to [noble] declined at Gen 16. Links 1-4 trace to a parish register; links 5-12 are FS/Geneanet profiles citing each other with no original document on any specific profile (prohibited as pre-1700 sources per WikiTree standard). father_id left null above link 4. Re-open only if a will, register, or court record surfaces for the specific profile.",
+"upgrade_path": "Original document (parish register / will / court record) naming the link-5 individual's parent."
+```
+
+**The common thread.** In all three, the automation was not *wrong* so much as *insufficient* — it surfaced the question correctly and then reached the edge of what it could decide. The human contribution was not a different answer; it was the reasoning that makes the answer survivable when someone re-examines it years later. That reasoning, written into the record at the moment of decision, is the deliverable of every judgment gate.
