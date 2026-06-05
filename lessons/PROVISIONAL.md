@@ -175,30 +175,6 @@ convergence_ancestors = {pid for pid, gens in parent_child_gens.items() if len(g
 
 ---
 
-## Background-script checkpoints: persist after every item, not at batch end
-
-**Source**: dry-cross (2026-04-19)
-
-Long-running batch scripts (e.g. Playwright triage of 50+ items, bulk API harvests) should save their progress file after each completed item, not accumulate results in memory for a single end-of-batch write. When the browser or API crashes mid-batch (common with Playwright `Execution context was destroyed` or token expiry), all completed work is lost otherwise. Pattern:
-
-```python
-for item in batch:
-    try:
-        result = process(item)
-        log['sessions'][-1]['items'].append(result)
-        save_log(log)          # ← every iteration, not outside the loop
-    except Exception as e:
-        log['sessions'][-1]['errors'].append({"item": item['id'], "error": str(e)})
-        save_log(log)
-        continue               # ← don't let one bad item kill the batch
-```
-
-In dry-cross `scripts/ancestry-auto-triage.py` commit `8f8bfe0`, this pattern converted "lose 10 accepts on crash" into "lose the one failing item; everything else preserved." Verified against the exact `query_selector_all` crash that motivated the patch.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
 ## Hardcoded-generation anti-pattern in bulk-add scripts
 
 **Source**: dry-cross (2026-04-19)
@@ -1192,15 +1168,5 @@ ThruLines exist only if the Ancestry login has a linked AncestryDNA test. Do not
 **Source**: genealogy (2026-06-04)
 
 All sister projects share one lockfile (`~/.wikitree-contribution-log.jsonl`) but each ships its own `wt-rate-check.py` (kindred a separate fork, dry-cross a symlink to genealogy). The `DAILY_CAP`/`WEEKLY_CAP` constants drifted apart (genealogy 350/600 vs kindred 50/500 vs the documented 50/150), so the enforced budget depended on which script happened to run — a correctness bug. Reconcile all three to one number and keep them in lockstep (or symlink the siblings to genealogy's copy). Reconciled to 350/600 on 2026-06-04.
-
-**Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
-
----
-
-## CDP browser port migrated 9222 → 9223; old puppeteer scripts hardcode 9222
-
-**Source**: genealogy (2026-06-04)
-
-The genealogy Chrome CDP endpoint is now `:9223` (siblings `:9224`). Older `*.js` puppeteer-core scripts (e.g. `batch-check-hint-counts.js`) still hardcode `browserURL: 'http://localhost:9222'` and silently fail to connect to a now-dead port. Make them read `process.env.CDP_URL || 'http://localhost:9223'`. Audit all browser-driving `.js` scripts for the stale 9222.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross

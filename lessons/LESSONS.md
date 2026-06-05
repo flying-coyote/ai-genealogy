@@ -104,26 +104,6 @@ Cross-project source-quality audit (2026-04-23) found: genealogy 14.3% no-URL ra
 
 ---
 
-## Playwright / automation patterns
-
-**Rule [CONFIRMED ×3]: `page.wait_for_timeout()` hangs indefinitely in CDP mode.** Replace all `page.wait_for_timeout(N)` calls with `time.sleep(N/1000.0)`. Pure Python stdlib sleep is OS-level and cannot be stalled by the Playwright event loop or Chrome state.
-
-**Rule [CONFIRMED ×3]: `ctx.new_page()` can hang after Chrome restart.** Use `ctx.pages[0]` if a page already exists; only call `ctx.new_page()` when no pages exist. *Refinement (genealogy, 2026-04-18)*: when running an automated posting script concurrently with an active Playwright MCP session, `pages[0]` is occupied by MCP and must not be clobbered — use `new_page()` instead. The restart-hang scenario only applies when the context has no pages; if pages exist, `new_page()` is safe and preferable for isolation.
-
-**Rule [CONFIRMED ×3]: Playwright MCP connection breaks when Chrome restarts.** The MCP server holds a WebSocket connection established at startup. Chrome restart creates a new WebSocket URL; the old connection dies and does not auto-heal. Plan Chrome restarts accordingly — Playwright tools are unavailable for the rest of the session after a restart.
-
-**Rule [CONFIRMED ×2]: Python stdout buffering hides batch progress.** Run scripts with `python3 -u` for real-time log output. When monitoring a redirected log, poll `wc -c log.txt` byte count — growing bytes confirm work is happening even when the last-seen person ID appears frozen. *(dry-cross, kindred)*
-
-**Rule [CONFIRMED ×2]: Ancestry React combobox persistence bug.** `element.value = '...'` + `dispatchEvent('input')` sets DOM value visibly but does NOT update React state. On Save, the old value persists. Fix: use Playwright native `browser_click` on the field, then `browser_type` to trigger real keyboard events. Text inputs (`fname`, `lname`) work fine with the JS setter; only combobox date/place fields have this bug. *(kindred, genealogy)*
-
-**Rule [CONFIRMED ×2]: CDP `fetch()` works authenticated; `page.goto()` drops cookies on navigation.** When using Chrome CDP, `fetch()` calls from browser context inherit session cookies. `page.goto()` to certain Ancestry/FS pages may drop authentication state mid-navigation. Use `browser_evaluate` with `fetch()` for API calls requiring auth. *(genealogy, dry-cross)*
-
-**Rule [CONFIRMED ×2]: For "click all matching elements" in Playwright, always `$$` first then iterate handles.** Never re-query `$` inside a loop intending to find different elements — re-queries find already-processed elements. *(dry-cross, kindred)*
-
-**Rule [PROVISIONAL — genealogy 2026-04-22]: Stable Google Chrome refuses `--load-extension`; use Playwright's Chromium for Testing.** Chrome 143+ stable explicitly rejects the flag (`--load-extension is not allowed in Google Chrome, ignoring`). CDP `Extensions.loadUnpacked` method returns `Method not available` on WebSocket transport. Workaround: switch the CDP `chrome-cdp.sh` script to Playwright's bundled Chromium (`~/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome` = Chrome/145 for Testing) when `vendor/wikitree-be-dist/` is present. User-data-dir format is compatible — cookies/logged-in tabs preserve across the switch. Full install procedure + feature reference in `platform-guides/wikitree-browser-extension.md`. *(Needs confirmation in kindred, dry-cross — both projects can share the same `vendor/wikitree-be-dist/` path to keep a single extension ID across projects.)*
-
----
-
 ## Data integrity patterns
 
 **Rule [CONFIRMED ×3]: Stored GPS/confidence fields drift from computed values.** `gps_compliance` and `confidence` stored in tree.json can be stale after bulk operations. Run the GPS report and confidence recalculation script after each session before committing.
