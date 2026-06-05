@@ -196,6 +196,23 @@ Document this analysis in the journal. "Birth certificate names X as mother; 188
 
 ---
 
+## 14. False "Capture Complete": Trusting an Automated Completeness Signal
+
+**What happened:** An automated sweep that counts each person's pending Ancestry hints reported zero new hints across 200+ direct-line ancestors. On that basis the deadline-critical capture work was declared "effectively complete" and set aside. The zero was an artifact — the sweep was miscounting the hint page — not a real measurement. The same sweep had been run against the sibling trees, so their "nothing to capture" readings were equally invalid. Re-counting correctly found ~1,090 pending hints on that same direct line and roughly 11,000 across the three trees, including high-value ancestors that had never had a single hint reviewed.
+
+**Consequence:** This is the inverse of #13. #13 attaches wrong records — a false positive that corrupts the data. #14 declares real, perishable work finished — a false negative that corrupts the research plan. With subscription access expiring, the abandoned capture would have been lost permanently: hints and indexed-record access survive only while the subscription does. The failure is especially dangerous because the wrong answer was the *convenient* one — "nothing left to do" — so it invites no second look.
+
+**Pattern signatures:**
+- An automated pass reports the *same* result for every person — every ancestor "no new hints," every profile "no change." Real genealogical coverage varies person to person; a uniform result across a whole tree is far more likely a measurement artifact than a finding.
+- The result says the work is done, and it overturns expectations in the comfortable direction (less research, less capture).
+- The tool is trusted because it produced reasonable-looking numbers before — but platform pages change, and a counter that silently breaks reads as "all clear" rather than erroring.
+
+**Fix / discipline:** Before accepting any automated "complete" or "nothing found" signal as grounds to stop researching or capturing, verify it against two or three persons you can independently confirm still have outstanding hints or records. Confirm a negative the same way you would confirm a positive — a false "done" ends work silently, where a false "found" at least leaves a wrong artifact to catch later. Scope the distrust precisely: only conclusions from the broken tool are suspect, not findings produced by an independent mechanism in the same session.
+
+**Why this differs from #13 and #10:** #13 is a wrong-record false positive that adds bad data; #14 is a false-completeness negative that removes good work from the plan. It belongs to the same family as #10 (priority-plan staleness, researching already-resolved brick walls) — both are cases where a stale or broken signal drives a wrong research decision, but #14's stakes are sharper because the lost work is perishable: once platform access ends, the uncaptured records are gone.
+
+---
+
 ## Pattern Recognition Across These Failures
 
 Looking across the thirteen entries, most failures share one of three root causes:
