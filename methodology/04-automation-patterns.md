@@ -192,9 +192,9 @@ Contribution is always staged. Nothing writes to an external platform as a side 
 - After any relationship contribution, verify the relationship type on the FS website before continuing.
 
 **WikiTree:**
-- No write automation. The rate limiter enforces 120s minimum between edits, 50/day, 150/rolling-7-days.
+- No write automation. Rate limits are account-wide and shared across the sister projects through one lockfile; the canonical policy lives in `platform-guides/wikitree.md` § Rate Limiter (350/day, 600/rolling-7-day, ≥30s between edits, ≤16 per 30 min). Do not restate the numbers here or in code — reference the guide, so there is one source of truth to update.
 - Prepared edits are written to `data/wt_prepared_edits/{WTID}.md` as paste-ready content. Human opens the Edit Biography page, pastes, saves, then logs the edit with `wt-rate-check.py --record`.
-- The 120s minimum is the core anti-automation signal. It exists to keep WikiTree from flagging the account.
+- **Cadence and scope.** Contribute only PROBABLE or VERIFIED persons (Tier 1-3 backed); never POSSIBLE, and never a pre-1700 profile without two independent T1/2 sources on both child and parent — those are a hard hold. Pace well under the ceiling, because the binding constraint is human review and the shared account budget, not the cap, and a burst from one project starves the other two. Each project sets its own WikiTree coverage target, but the budget is reconciled across all three.
 
 **Ancestry:**
 - There is no accept/decline API — the action happens in the browser. But hint acceptance *can* be batched by driving the browser with a collection-registry classifier (see the Ancestry platform guide, "Automated Hint Triage & Acceptance"): known record collections auto-accept, member trees and photos are ignored by URL pattern before any lookup, and unrecognized collections are flagged MANUAL and never blind-accepted. The human-judgment gate moves from per-hint identity confirmation to per-collection-type registry curation — a far smaller, more stable surface, and one you can cover with offline classifier tests.
@@ -216,6 +216,14 @@ The automation pipeline optimizes for coverage — more persons, more sources at
 Run `python3 scripts/metrics-report.py` to generate the current distribution. Add the summary output to `docs/SESSION_HISTORY.md` at each session close.
 
 The Tier 3-5 threshold deserves emphasis: a tree where most sources come from census transcriptions and online trees will appear well-sourced while remaining structurally unverifiable. The source tier distribution is the single most informative quality signal — more so than raw source counts.
+
+---
+
+## Conformance Gate
+
+The metrics above tell a project about itself. A second check, `conformance-report.py`, tells a project whether it conforms to *this methodology* — the shared standard, not its own history. It scores tree.json against the checkable rules (the confidence gate, source-field completeness, multi-platform coverage, negative-search documentation, durability anchoring), separates ERROR (data-quality bugs) from WARN (process gaps), and ratchets against a committed `.conformance-baseline.json`: the pre-commit hook blocks any commit that raises an ERROR count above its grandfathered floor, so legacy debt never freezes work but conformance can only move down.
+
+This is the downward half of the methodology loop. `promote-lessons.py` lifts confirmed lessons *up* from a project into the shared standard; the conformance gate verifies a project conforms *down* to it. Without the downward check a standard written here is only prose, and prose drifts — measured across three sister projects citing one shared hub, documented negative-search coverage ranged from 3% to 41%, and the two scripts meant to enforce the standard (`validate-tree.py`, `recalculate-confidence.py`) had themselves forked into three divergent copies. The checker lives in the hub (`starter-kit/scripts/conformance-report.py`) and is symlinked into each project, so the check itself cannot fork the way a copied script does.
 
 ---
 

@@ -24,6 +24,14 @@ For American genealogy 1700-1950, work platforms in this order:
 
 ---
 
+## Multi-Platform Coverage
+
+The sequence above is an order, not a menu. A direct-line ancestor in active research is not "searched" until the primary three platforms have each been either searched-with-a-hit or searched-with-a-documented-negative: **Ancestry** (indexed vitals, census, military, probate), **FamilySearch** (the records the FS index carries that Ancestry doesn't), and **WikiTree** (community cross-check, especially pre-1700). Mapping a person to FamilySearch and stopping there is the most common coverage failure — it looks like progress, since an ID is attached, while two of the three primary indexes were never queried.
+
+So before a direct-line person is marked PROBABLE or VERIFIED, each of Ancestry and FamilySearch should show either an attached source or a `negative_searches[]` entry. A person sourced only on one platform, with no negative searches recorded on the others, has not met GPS Element 1 no matter how many sources that one platform produced. This is what the conformance checker's COV-1 and DOC-1 enforce.
+
+---
+
 ## The Context-First Rule
 
 **Never start browser research without reading the person's context cache file first.**
@@ -50,6 +58,7 @@ Before opening a browser or calling any API:
 - [ ] Check `research/RESEARCH_PRIORITY_PLAN.md` — is this person actually a priority right now?
 - [ ] Verify journal frontmatter (confidence, status) matches current `tree.json` state. If they differ, resync before proceeding — the journal may be ahead of (or behind) the tree.
 - [ ] Verify the person is not collateral — check `lineage_part` and `notes`. If `lineage_part` is null and the notes suggest step-relative or in-law, parent gaps are acceptable. Do not consume research time on acceptable gaps.
+- [ ] Search the cross-repo note index for prior art on this surname and place before opening a browser — `mcp__tolaria__search_notes`, or headless `tolaria_verify.py --query "<surname> <place>" <vault roots>`. A sibling project may already have cracked this family (the Echols patriarch fell to a chancery suit in one tree before the others reached him); the index spans all three trees plus the methodology hub, so this is the cross-repo extension of context-first.
 
 ---
 
@@ -108,6 +117,7 @@ At the end of every session that touches a person:
 - [ ] Research queue updated: completed persons moved to completed array
 - [ ] `RESEARCH_PRIORITY_PLAN.md` updated if any priorities changed
 - [ ] If you documented any new patterns in `LESSONS_LEARNED.md` this session, run `python3 /path/to/ai-genealogy/starter-kit/scripts/promote-lessons.py --check` and stage any promotion candidates
+- [ ] Run `python3 scripts/conformance-report.py` and confirm no new ERROR-level violations. The pre-commit gate already enforces this against `.conformance-baseline.json`, but checking at close surfaces a regression before the commit blocks on it
 
 Skipping close hygiene means the next session restores from a degraded state. Over dozens of sessions, this compounds into a tree where confidence values do not reflect current evidence and the research queue contains items that were resolved months ago.
 
@@ -210,6 +220,21 @@ When a person is confirmed as a brick wall:
 ```
 
 Document the `upgrade_path` as specifically as possible: what record collection, what repository, what date range would break this wall. This is what ONSITE research backlog entries are built from.
+
+---
+
+## Brick-Wall Research Channel Ladder
+
+"Every reasonable platform has been searched" needs an order and a definition of done, or three researchers each stop at a different point and call it the same thing. Work a parent-gap wall through these channels and record a negative for each one that comes up empty:
+
+1. **FS Family Tree** — the collaborative profile and its sibling/parent consensus (a lead, never proof).
+2. **FS indexed records** — census, vitals, military for the person and the candidate parent.
+3. **FS Full-Text** — wills, deeds, chancery suits, OCR'd books. This is where pre-1850 Southern parentage actually breaks — a will or partition suit naming children — at a cold-query hit rate around 1 in 20, but the hits are decisive. Census, newspapers, and Find A Grave do not name the parents of an 1800-1820 rural birth.
+4. **Ancestry indexed records** — the county probate, deed, and marriage collections FS Full-Text lacks. This channel is distinct from FS Full-Text and is the one most often skipped: an FS-only session declares a wall "exhausted" that an Ancestry probate search would break. Run it before concluding, and run it before any subscription lapses, because it is the perishable one.
+5. **ThruLines** — if a DNA test is linked, for a triangulated lead (a lead, not proof).
+6. **Onsite** — courthouse, state archive, parish register; the `upgrade_path` names exactly which repository and record set.
+
+A wall is "exhausted online" only when channels 1 through 4 each carry a documented negative. A wall declared after FS-only work, with no Ancestry-records negative on file, is an incomplete search wearing a brick-wall label.
 
 ---
 

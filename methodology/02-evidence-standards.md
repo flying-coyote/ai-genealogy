@@ -94,6 +94,17 @@ Also record in the research journal. If you are running multi-agent research loo
 
 ---
 
+## Evidence Durability
+
+Evidence sits on a durability spectrum, and the spectrum matters most when platform access is time-boxed — an expiring subscription, a DNA test about to lapse. Rank captures by extinction risk and re-anchor the perishable ones before the window closes.
+
+- **Perishable — subscription-gated.** Ancestry hints and record images, ThruLines/DNA matches, Geni Pro tree matches. These disappear when the subscription does; they are not yours until re-anchored.
+- **Durable — persistent and free.** A FamilySearch ARK (`ark:/61903/...`) stored in a source object, a posted WikiTree `<ref>`, and the local tree.json under version control. These survive any platform lapse.
+
+The rule: a person whose parentage or vitals rest on a perishable source must be re-anchored to a durable one before that platform's access ends. The durable anchor for an Ancestry record is usually the same record's FS ARK — FamilySearch carries the image free — and where FS lacks it, capture the citation text verbatim into the source note so the fact survives even when the image doesn't. When a deadline is in view, capture order is highest-extinction-risk first and deepest-line first, because the closest relatives are usually already well-sourced, so working by generation front-loads the safe captures and strands the perishable deep-line ones for last, exactly backwards. A final GEDCOM export is the floor, not the plan; take it, but don't let it stand in for ARK anchoring. The conformance checker's DUR-1 flags any person carrying an Ancestry source with no durable FS-ARK anchor.
+
+---
+
 ## Required Source Fields
 
 Every source object must carry:
