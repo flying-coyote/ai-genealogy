@@ -36,14 +36,14 @@ Common read actions:
 
 WikiTree enforces account-level edit rate limits. If you are contributing from multiple projects under the same account, use a shared rate-checker script to enforce these limits across all projects:
 
-| Limit | Value |
+| Limit | Value (canonical — identical across all sister projects) |
 |-------|-------|
-| Edits per day | 50 |
-| Edits per rolling 7 days | 150 |
+| Edits per day | 350 |
+| Edits per rolling 7 days | 600 |
 | Minimum time between edits | 30 seconds (human-rate floor) |
 | Edits per 30-minute window | 16 max |
 
-These are conservative starting defaults. The minimum delay is a **self-imposed human-rate floor, not a value WikiTree publishes or monitors** — the genealogy project ran 120s, then 10s, then settled on 30s (2026-05-11) with no platform signal either way. The daily/weekly caps are likewise self-imposed; a long-running supervised campaign reconciled all three sister projects to **350/day and 600/rolling-7-day** (2026-06-04). Pick one cap and keep every sister project's `wt-rate-check.py` identical, since they share one lockfile — a divergent fork means the enforced budget depends on which script happens to run. Account *blocks* (Error 2562) are real and durable (48+ days, account-wide), but they followed genuine batch-automation bursts, not any specific delay value; the safe rule is "all edits via the browser UI, paced, and logged."
+These are the reconciled account-wide caps, not platform-published values. The minimum delay is a **self-imposed human-rate floor, not a value WikiTree publishes or monitors** — the genealogy project ran 120s, then 10s, then settled on 30s (2026-05-11) with no platform signal either way. The daily/weekly caps are likewise self-imposed; a long-running supervised campaign reconciled all three sister projects to **350/day and 600/rolling-7-day** (2026-06-04). Pick one cap and keep every sister project's `wt-rate-check.py` identical, since they share one lockfile — a divergent fork means the enforced budget depends on which script happens to run. Account *blocks* (Error 2562) are real and durable (48+ days, account-wide), but they followed genuine batch-automation bursts, not any specific delay value; the safe rule is "all edits via the browser UI, paced, and logged."
 
 **Separate platform-side limit — daily comment cap (~60/day):** WikiTree caps talk-page *comments* (the "Post a comment" action) independently of the edit budget. When hit, the submit silently no-ops and `#commentPostStatus` shows "After attacks by spammers we were forced to place a limit on the number of comments per day... post in 24 hours or use a Private Message or e-mail." Working assumption ~60/rolling-24h (first seen ~30, later revised up). Check `#commentPostStatus` after every comment submit to detect the silent failure. This constrains courtesy-comment campaigns (pre-edit manager notifications), not bio edits.
 
@@ -196,8 +196,7 @@ When a WikiTree account triggers Error 2562 (automation rate limit), the block i
 **Observed case**: Wiley-6910 ([coordinator-account]) blocked 2026-03-02 after ~993 automated edits in 5 days. As of 2026-04-19 (day 48), still returns Error 2562 on every action. Email to `info@wikitree.com` did not yield recovery.
 
 **Mitigation pattern**: use a secondary account for contributions (Wiley-6998 in the genealogy project), assigned to a mentor for supervision, with all edits via browser UI (no automation). Enforce per-account rate limits:
-- 50 edits/day
-- 150 edits/rolling-7-days
+- 350 edits/day, 600 edits/rolling-7-days (canonical; see Rate Limiter section)
 - ≥30s minimum between edits (self-imposed floor; see Rate Limiter section)
 - ≤16 edits per 30-minute window
 
