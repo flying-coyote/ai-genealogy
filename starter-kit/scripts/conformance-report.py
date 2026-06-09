@@ -46,6 +46,7 @@ import argparse
 import json
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 BASELINE_FILE = ".conformance-baseline.json"
@@ -57,7 +58,7 @@ CONCLUDED = ("VERIFIED", "PROBABLE")
 SEVERITY = {
     "CONF-1": "ERROR", "CONF-2": "ERROR", "CONF-3": "ERROR",
     "SRC-1": "WARN", "COV-1": "WARN", "DOC-1": "WARN",
-    "UPG-1": "WARN", "DUR-1": "WARN",
+    "UPG-1": "WARN", "DUR-1": "WARN", "GEN-1": "WARN",
 }
 STANDARD_REF = {
     "CONF-1": "02 §Confidence Rules (VERIFIED >=2 T1/2a)",
@@ -68,6 +69,7 @@ STANDARD_REF = {
     "DOC-1":  "02 §Negative Searches (GPS Element 1)",
     "UPG-1":  "02 §POSSIBLE Seeding (upgrade_path required)",
     "DUR-1":  "02 §Durability Tiering (anchor Ancestry evidence to FS ARK)",
+    "GEN-1":  "01 §Generation integrity (parent generation = child + 1)",
 }
 REQUIRED_SOURCE_FIELDS = ["name", "title", "tier", "platform", "type",
                           "added", "proves", "evidence_type"]
@@ -115,6 +117,18 @@ def has_negative_search(p):
             return True
     return False
 
+def has_dated_concern_naming(p, parent_id):
+    """True if the person carries a dated validation.concern naming this parent — an
+    acknowledged, under-review generation mismatch rather than an unreviewed bug."""
+    for c in aslist(asdict(p.get("validation")).get("concerns")):
+        if isinstance(c, dict) and c.get("date") and parent_id in asstr(c.get("concern")):
+            return True
+    return False
+
+def upgrade_path(p):
+    """upgrade_path lives at the top level (canonical) or under validation."""
+    return p.get("upgrade_path") or asdict(p.get("validation")).get("upgrade_path")
+
 def platform_searched(p, key, src_pred):
     """True if the person shows evidence of a search on a platform: a platform_id,
     a source from it, or a documented negative search naming it."""
@@ -134,6 +148,18 @@ def platform_searched(p, key, src_pred):
 # --------------------------------------------------------------------------- #
 def run_checks(persons):
     viol = {k: [] for k in SEVERITY}
+    by_id = {p.get("id"): p for p in persons if p.get("id")}
+    # Convergence ancestors: a parent whose children sit at 2+ distinct generations is
+    # reached via descent paths of different lengths, so a generation diff != 1 there is
+    # legitimate (pedigree collapse), not a bug — excluded from GEN-1.
+    pcg = defaultdict(set)
+    for p in persons:
+        g = p.get("generation")
+        if isinstance(g, int):
+            for pf in ("father_id", "mother_id"):
+                if p.get(pf):
+                    pcg[p[pf]].add(g)
+    convergence = {k for k, v in pcg.items() if len(v) > 1}
     for p in persons:
         pid = p.get("id", "<no-id>")
         c = confidence(p)
@@ -165,13 +191,28 @@ def run_checks(persons):
             if not has_negative_search(p) and not (anc and fs):
                 viol["DOC-1"].append(pid)
 
-        # WARN: POSSIBLE without an upgrade_path
-        if c == "POSSIBLE" and not p.get("upgrade_path"):
+        # WARN: POSSIBLE without an upgrade_path (top-level or validation.upgrade_path)
+        if c == "POSSIBLE" and not upgrade_path(p):
             viol["UPG-1"].append(pid)
 
         # WARN: Ancestry evidence not anchored to a durable FS ARK
         if any(is_ancestry(s) for s in S) and not any(is_fs_ark(s) for s in S):
             viol["DUR-1"].append(pid)
+
+        # WARN: parent generation must be child generation + 1 (skip convergence + documented)
+        g = p.get("generation")
+        if isinstance(g, int):
+            for pf in ("father_id", "mother_id"):
+                par = by_id.get(p.get(pf))
+                if not par:
+                    continue
+                pg = par.get("generation")
+                if not isinstance(pg, int) or pg - g == 1:
+                    continue
+                if p.get(pf) in convergence or has_dated_concern_naming(p, p.get(pf)):
+                    continue
+                viol["GEN-1"].append(pid)
+                break
     return viol
 
 
