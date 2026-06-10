@@ -84,6 +84,8 @@ Cross-project source-quality audit (2026-04-23) found: genealogy 14.3% no-URL ra
 
 **Rule [CONFIRMED ×2] (captured 2026-04-15): FS "Set Preferred Parents" for parentage corrections.** Don't remove wrong parents first. Add correct parents, use "Set Preferred" to make them primary, then optionally remove wrong parents. Leaves the evidence trail intact. *(kindred, genealogy)*
 
+**Rule [CONFIRMED ×2] (captured 2026-06-10): Record/administrative unit must predate the event being searched.** Before searching a parish-register or county collection for a pre-1800 baptism, marriage, or burial, check that the record series — and the administrative unit named in the place string — actually existed at the event date. A register that begins after the event date cannot hold the record, so the search returns zero for a structural reason, not an indexing gap, and an anchor placename that postdates the person is usually a tree-cascade error inherited from a later record. Look up the register start year (Findmypast, Forebears, GENUKI, NLW/ScotlandsPeople/PRONI) or the unit's formation date before building the search; if the event predates it, redirect to bishop's transcripts, marriage bonds, or probate. Examples: Westfield NJ Presbyterian register begins 1759 (a 1736 marriage cannot exist); Llandwrog Caernarvonshire baptisms begin 1711 (a 1695 baptism cannot exist); Cambridge St Paul parish was not established until 1837 (a 1629 birth there is impossible). *(dry-cross 2026-04-21 register-start cases; genealogy-kindred 2026-04-20 parish-establishment + county-organization cases)*
+
 ---
 
 ## Ancestry patterns
@@ -101,6 +103,14 @@ Cross-project source-quality audit (2026-04-23) found: genealogy 14.3% no-URL ra
 ## Find A Grave patterns
 
 **Rule [CONFIRMED ×2] (captured 2026-04-15): Search married women by SSDI/death-record surname, not maiden name.** FAG memorials use the final married surname. Search maiden name returns nothing for women who remarried. Check SSDI first for the death-record surname; also try abbreviated first-name variants ("Mantha" for "Armantha"). *(dry-cross, genealogy)*
+
+---
+
+## WikiTree patterns
+
+**Rule [CONFIRMED ×2] (captured 2026-06-10): Pre-1700 Certification badge is required to edit pre-1700-born profiles — probe before queuing.** A WikiTree profile for a person born before 1700 loads the edit page but renders no `#wpTextbox1` textarea and shows "Please see Pre-1700 Profiles. Thank you for understanding." unless the editing account holds the Pre-1700 Certification badge. Before staging any WT bio edits that touch pre-1700 profiles, run a one-shot probe on a single pre-1700 target to confirm the textarea renders; if it doesn't, filter pre-1700 out of the plan, mark `skipped_pre_1700_cert_required`, and either obtain the badge or hand the bio to the profile manager via a WT comment. In one dry-cross session this killed 13 of 16 otherwise-ready bios; in a kindred session it killed 3 of 6. *(dry-cross 2026-04-20 Cox-580; genealogy-kindred 2026-04-20 Coulson-2392/Kindred-729/Nutt-2112)*
+
+**Rule [CONFIRMED ×2] (captured 2026-06-10): Merge a prepared WT bio additively when the live bio carries community enrichment.** A prepared bio goes stale once other contributors enrich the live profile, so a full replace strips their work. Decide by current bio length and content: a near-stub (under ~300 chars, template + URLs only) can be full-replaced with care to preserve `{{templates}}` and `[[Category:...]]` lines; a bio with community narrative (census transcriptions, biographical notes, family lore) must be merged additively — keep the existing text, extract only the new `<ref name="...">` blocks not already present (match by `name`), inject them before `<references />`, and house inherited content under a new subsection like `=== Census transcriptions ===`. If there are no new refs to inject, skip and drop the prepared file. *(genealogy 2026-04-18 ref-dedup injection; dry-cross 2026-04-20 narrative-preserving merge — Draughon-300 grew 901→2439 chars additively, Cross-9834 full-replaced)*
 
 ---
 
