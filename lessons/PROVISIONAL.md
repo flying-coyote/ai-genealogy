@@ -42,13 +42,8 @@ before saving any biography edit to catch these at the UI level.
 
 ---
 
-## FS source harvest: targeted calls beat bulk script for recently-added persons
+<!-- MOVED TO CONTESTED 2026-06-10: this claim ("targeted API calls beat the bulk harvest script for recently-added persons") is now documented as a context-dependent debate in CONTESTED.md → "FS source harvest timing: bulk script vs. targeted API calls" (Side A dry-cross targeted, Side B genealogy bulk). Resolution: bulk for whole-generation sweeps, targeted for a specific list of new persons. -->
 
-**Source**: dry-cross (2026-04-15)
-
-For persons added to the tree within the current session (e.g., via lineage extension), direct API calls per FS PID yield more new sources per minute than the sequential bulk harvest script. The bulk script processes persons in tree order, hitting well-sourced early-generation persons before reaching the newly-added ones.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
 
 ---
 
@@ -118,13 +113,8 @@ WikiTree locks pre-1700 profiles behind a Pre-Genealogical Merit (PGM) project b
 
 ---
 
-## WikiTree: additive bio injection for stale prepared edits
+<!-- PROMOTED 2026-06-10 → LESSONS.md [CONFIRMED ×2] "Merge a prepared WT bio additively when the live bio carries community enrichment." Originally genealogy (2026-04-18, ref-dedup injection); confirmed by dry-cross (2026-04-20, narrative-preserving merge — see the now-removed "Additive bio merge when current bio has >200 chars" entry). -->
 
-**Source**: genealogy (2026-04-18)
-
-A prepared WT edit bio goes stale when other contributors enrich the live profile between the time the edit was prepared and the time it is posted. If the prepared bio is materially shorter than the current live bio (threshold: prepared < current - 200 chars), applying it as a full replacement causes a regression — stripping enrichment the community added. The correct strategy: extract new `<ref name="...">...</ref>` blocks from the prepared bio that aren't already present in the current bio (match by `name` attribute), then inject them immediately before `<references />` in the live bio. If there are no new refs to inject, skip and remove the prepared file. Implemented in `wt-playwright-post.py` via `_extract_new_refs()` + `_inject_refs_into_bio()`.
-
-**Needs confirmation in**: genealogy-kindred, dry-cross
 
 ---
 
@@ -455,23 +445,8 @@ Defense: in bio-generation validators, reject census records whose census year f
 
 ---
 
-## Additive bio merge when current bio has >200 chars of narrative
+<!-- PROMOTED 2026-06-10 → LESSONS.md [CONFIRMED ×2] "Merge a prepared WT bio additively when the live bio carries community enrichment." This dry-cross refinement (2026-04-20) + the earlier genealogy ref-dedup injection (2026-04-18) together gave the ×2 corroboration. The length-band table and the Draughon-300/Cross-9834 examples are summarized in the confirmed rule. -->
 
-**Source**: dry-cross (2026-04-20) — refinement of earlier genealogy lesson.
-
-The existing genealogy-project lesson ("WikiTree: additive bio injection for stale prepared edits") targets `<ref>` deduplication. dry-cross extends it: when the current WT bio contains community-contributed narrative text (not just refs — things like census transcriptions, biographical notes, family lore), replacing with a prepared bio strips that enrichment.
-
-Triage the merge strategy by current bio length:
-
-| Current length | Strategy |
-|----------------|----------|
-| < 200 chars (stub + URLs) | Full replace |
-| 200-500 chars (parents + dates + URLs) | Full replace with careful preservation of `{{templates}}` and `[[Category:...]]` lines |
-| 500+ chars (community narrative content) | ADDITIVE: keep existing text, add refs + narrative in new subsections like `=== Census transcriptions ===` |
-
-In dry-cross example: Draughon-300 had 901 chars of community census transcriptions; bio was merged additively, growing to 2439 chars. Cross-9834 had 414 chars (stub + 3 external URLs); full replaced to 1548 chars preserving `[[Category]]` lines + `{{One Name Study}}` template.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
 
 ---
 
@@ -531,7 +506,9 @@ All 8 flags were false positives. Decision: KEEP_UNVERIFIED on each (separate-gr
 
 ---
 
-## Check parish register start date before searching historical collections
+<!-- PROMOTED 2026-06-10 → LESSONS.md [CONFIRMED ×2] "Record/administrative unit must predate the event being searched." dry-cross register-start cases (2026-04-21, Westfield NJ 1759 / Llandwrog 1711) + genealogy-kindred parish-establishment cases (2026-04-20, Cambridge St Paul 1837) and county-organization cases. The redirect list (bishop's transcripts, marriage bonds, probate) is carried into the confirmed rule. Full original case detail retained below for reference. -->
+
+## Check parish register start date before searching historical collections (promoted — see LESSONS.md)
 
 **Source**: dry-cross (2026-04-21)
 
@@ -784,7 +761,7 @@ See `methodology/06-failure-modes.md#13` for the full case studies (Annie Mary S
 **Needs confirmation in**: genealogy, genealogy-kindred
 
 
-## When auditing a tree's relationship integrity, parent-linkage cross-validation against multiple platforms (WT + FS) catc
+## Parent-linkage cross-validation against multiple platforms (WT + FS)
 
 **Source**: genealogy-dry-cross (2026-06-04)
 
@@ -797,7 +774,7 @@ When auditing a tree's relationship integrity, parent-linkage cross-validation a
 
 ---
 
-## When investigating a parent-linkage conflict between tree and WT, compare the sibling cluster of the WT-side parents to 
+## Wrong-parent-import detection via WT sibling-cluster cross-check
 
 **Source**: genealogy-dry-cross (2026-06-04)
 
@@ -805,95 +782,27 @@ When investigating a parent-linkage conflict between tree and WT, compare the si
 
 **Needs confirmation in**: genealogy, genealogy-kindred
 
----
-
-## Before staging a WT bio for a pre-1700-born person, check the account has the Pre-1700 Certification badge. Otherwise ma
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-Before staging a WT bio for a pre-1700-born person, check the account has the Pre-1700 Certification badge. Otherwise mark `skipped_pre_1700_cert_required` in queue and defer. Detection in-page: absence of `#wpTextbox1` after the form loads = restricted. For workaround, either obtain Pre-1700 Cert on the active account, or hand the bio to the profile manager via WT comment.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
+<!-- PROMOTED 2026-06-10: "Pre-1700 Certification badge required before staging a WT bio for a pre-1700-born person" moved to LESSONS.md [CONFIRMED ×2] — independently observed in dry-cross (Cox-580, 2026-04-20) and genealogy-kindred (Coulson-2392/Kindred-729/Nutt-2112, 2026-04-20). -->
 
 ---
 
-## Never post a bulk-harvested bio without per-ref validation. The indexer's typed-in name must plausibly match the target,
+## After every successful WT save, log it via the rate-checker `--record`
 
 **Source**: genealogy-dry-cross (2026-06-04)
 
-Never post a bulk-harvested bio without per-ref validation. The indexer's typed-in name must plausibly match the target, AND the collection era must include the person's life.
+After every successful WT save (URL includes `?errcode=saved`), call `python3 scripts/wt-rate-check.py --record --project dry-cross --profile <WT_ID> --action bio-update --notes "..."`. Use a Monitor with `until python3 scripts/wt-rate-check.py; do sleep 10; done` to wait for the next edit window without burning context on polling.
 
 **Needs confirmation in**: genealogy, genealogy-kindred
 
----
+<!-- TOMBSTONE 2026-06-10 (promotion sweep): six 2026-06-04 dry-cross restatements removed as duplicates of earlier, fuller dry-cross entries already in this file or in LESSONS.md —
+  • "per-ref validation of bulk-harvested bios" → "Bio generators must validate sources, not just iterate them" (above)
+  • "compare date vs date_original" → "ISO date field drift from date_original free-text" (above)
+  • "FAG family-cluster before overwriting a date" → "Find A Grave + cemetery cluster overrides unsourced tree date" (above)
+  • "census dates within [birth-5, death+1]" → "Wrong-person census attachment: surname + city/county mismatch filter" (above)
+  • "bio length decides replace-vs-additive" → "Additive bio merge when current bio has >200 chars of narrative" (PROMOTED ×2 below)
+  • "prefix-based fuzzy surname matching" → subsumed by the bio-validation entry's name-match defense (above)
+  "surname etymology needs 3 generations" is superseded by LESSONS.md [CONFIRMED ×2] "Surname Americanization can invert under deeper research" (dry-cross, genealogy). -->
 
-## When posting a bio or upgrading confidence, compare `date` against `date_original` for both birth and death. Mismatch → 
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-When posting a bio or upgrading confidence, compare `date` against `date_original` for both birth and death. Mismatch → the ISO field is usually wrong (imports lose info; hand-typed originals retain it).
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
-## Audit trail for a date correction via FAG — before overwriting, check the FAG memorial's family cluster matches your tre
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-Audit trail for a date correction via FAG — before overwriting, check the FAG memorial's family cluster matches your tree (parents + spouse + children). FAG alone without family corroboration is T3; with family cluster match, effectively T2.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
-## Census dates must fall within `[birth_year-5, death_year+1]`. Census location should overlap with person's known residen
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-Census dates must fall within `[birth_year-5, death_year+1]`. Census location should overlap with person's known residence. When correcting a bio, flag the wrong-person attachment in bio text so future researchers understand the disambiguation.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
-## Check current bio length before deciding strategy. For near-stubs (<300 chars with only template + URLs), full replace. 
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-Check current bio length before deciding strategy. For near-stubs (<300 chars with only template + URLs), full replace. For rich community content, additive merge — preserve their text and add refs + narrative alongside. Adding a `=== Census transcriptions ===` subsection can house inherited content cleanly.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
-## Use prefix-based fuzzy matching for both first and surname tokens, min 4 chars. Also allow "Richd" ↔ "Richard" first-nam
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-Use prefix-based fuzzy matching for both first and surname tokens, min 4 chars. Also allow "Richd" ↔ "Richard" first-name abbreviation via same mechanism.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
-## After every successful WT save (URL includes `?errcode=saved`), call `python3 scripts/wt-rate-check.py --record --projec
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-After every successful WT save (URL includes `?errcode=saved`), call `python3 scripts/wt-rate-check.py --record --project dry-cross --profile <WT_ID> --action bio-update --notes "..."`. Use Monitor with `until python3 scripts/wt-rate-check.py; do sleep 10; done` to efficiently wait for the next edit window without burning context on polling.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
-
----
-
-## For surname etymology hypotheses, you need at least 3 generations of consistent spelling to claim a pattern, and any Gen
-
-**Source**: genealogy-dry-cross (2026-06-04)
-
-For surname etymology hypotheses, you need at least 3 generations of consistent spelling to claim a pattern, and any Gen+1 evidence supersedes the earlier hypothesis.
-
-**Needs confirmation in**: genealogy, genealogy-kindred
 
 ---
 
