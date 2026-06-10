@@ -21,6 +21,7 @@ which is which, so a new project knows what it gets for free versus what it must
 |---|---|
 | `validate-tree.py` | Validate `tree.json` against the schema and the GPS-element / source-quality rules. `--strict` fails on warnings. |
 | `recalculate-confidence.py` | Recompute VERIFIED / PROBABLE / POSSIBLE from each person's evidence array. Dry-run by default; `--apply` writes. |
+| `conformance-report.py` | Read-only standards-conformance checker + ratchet gate; modes report/summary/json/baseline/gate. |
 | `promote-lessons.py` | Pull-based: read a sister project's local `LESSONS_LEARNED.md` and classify each rule against the shared `lessons/`. See "Lesson pipeline" below. |
 | `lint-lessons.py` | Hub-side: validate `lessons/*.md` format conformance (rule format, captured dates, PROVISIONAL fields). Runs from this repo with no sister project. Used by CI. |
 | `familysearch_api.py` | FamilySearch API client wrapper (token handling, person/source queries). Import as a library or run for ad-hoc calls. |
