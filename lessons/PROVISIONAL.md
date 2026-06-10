@@ -1157,7 +1157,7 @@ To export an Ancestry tree (e.g. before a subscription lapses): Tree → Setting
 
 **Source**: genealogy (2026-06-04)
 
-ThruLines exist only if the Ancestry login has a linked AncestryDNA test. Do not assume one exists: `[coordinator-account]` has none (the `/dna/` page shows "Register a kit / Buy now" and `/dna/matches` 404s), so there are no ThruLines to capture and any "Pro Tools / DNA expiry" sub-deadline is moot. Check that the DNA section shows real results before budgeting browser time for DNA/ThruLines capture.
+ThruLines exist only if the Ancestry login has a linked AncestryDNA test. Do not assume one exists: the `[coordinator-account]` login has none (the `/dna/` page shows "Register a kit / Buy now" and `/dna/matches` 404s), so there are no ThruLines to capture and any "Pro Tools / DNA expiry" sub-deadline is moot. Check that the DNA section shows real results before budgeting browser time for DNA/ThruLines capture.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
 

@@ -193,7 +193,7 @@ If API access is blocked, contact `info@wikitree.com`. UI-unblocked accounts may
 
 When a WikiTree account triggers Error 2562 (automation rate limit), the block is both **durable** (48+ days observed) and **account-wide** (UI + API + login all fail). The account manager's identity does not transfer; blocked accounts cannot be recovered by a clean login from a new IP or session.
 
-**Observed case**: Wiley-6910 ([coordinator-account]) blocked 2026-03-02 after ~993 automated edits in 5 days. As of 2026-04-19 (day 48), still returns Error 2562 on every action. Email to `info@wikitree.com` did not yield recovery.
+**Observed case**: Wiley-6910 (the `[coordinator-account]` login) blocked 2026-03-02 after ~993 automated edits in 5 days. As of 2026-04-19 (day 48), still returns Error 2562 on every action. Email to `info@wikitree.com` did not yield recovery.
 
 **Mitigation pattern**: use a secondary account for contributions (Wiley-6998 in the genealogy project), assigned to a mentor for supervision, with all edits via browser UI (no automation). Enforce per-account rate limits:
 - 350 edits/day, 600 edits/rolling-7-days (canonical; see Rate Limiter section)
