@@ -31,7 +31,9 @@ import re
 import sys
 from collections import Counter
 from dataclasses import asdict, dataclass, field
+import os
 from pathlib import Path
+_BASE = Path(os.environ.get("GENEALOGY_HOME", str(Path.home())))
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from okf import GENEALOGY_ROOTS, load_notes, split_frontmatter  # noqa: E402
@@ -40,9 +42,9 @@ TODAY = datetime.date.today()
 
 # Per-tree structured authority (id-space differs per tree; the bridge measures itself).
 TREES = {
-    "genealogy": Path("/home/jerem/genealogy"),
-    "dry-cross": Path("/home/jerem/genealogy-dry-cross"),
-    "kindred": Path("/home/jerem/genealogy-kindred"),
+    "genealogy": Path(str(_BASE / "genealogy")),
+    "dry-cross": Path(str(_BASE / "genealogy-dry-cross")),
+    "kindred": Path(str(_BASE / "genealogy-kindred")),
 }
 
 # Conservative tunables — a short, real list, not the whole backlog.
