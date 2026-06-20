@@ -15,15 +15,17 @@ import argparse
 import json
 import sys
 from collections import Counter
+import os
 from pathlib import Path
+_BASE = Path(os.environ.get("GENEALOGY_HOME", str(Path.home())))
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from okf_source_fields import accepted_source_keys, noncanonical_keys  # noqa: E402
 
 TREES = {
-    "genealogy": "/home/jerem/genealogy/data/tree.json",
-    "dry-cross": "/home/jerem/genealogy-dry-cross/data/tree.json",
-    "kindred": "/home/jerem/genealogy-kindred/data/tree.json",
+    "genealogy": str(_BASE / "genealogy" / "data/tree.json"),
+    "dry-cross": str(_BASE / "genealogy-dry-cross" / "data/tree.json"),
+    "kindred": str(_BASE / "genealogy-kindred" / "data/tree.json"),
 }
 
 

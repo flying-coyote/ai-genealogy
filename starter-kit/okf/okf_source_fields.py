@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-REGISTRY = Path(__file__).resolve().parent.parent / "research" / "source-field-registry.md"
+REGISTRY = Path(__file__).resolve().parent / "source-field-registry.md"
 
 
 def accepted_source_keys(registry_path: Path = REGISTRY) -> set[str]:

@@ -23,14 +23,17 @@ except ImportError:  # pragma: no cover
     yaml = None
 
 # The registry lives in the coordinator repo (promote to ai-genealogy hub when ready).
-REGISTRY = Path("/home/jerem/genealogy/research/_type-registry.md")
+# Configure via GENEALOGY_HOME env var (default: your home dir). Registry sits next to these scripts.
+import os
+_BASE = Path(os.environ.get("GENEALOGY_HOME", str(Path.home())))
+REGISTRY = Path(__file__).resolve().parent / "_type-registry.md"
 
 # One OKF graph across the three trees + the shared methodology hub.
 GENEALOGY_ROOTS = [
-    Path("/home/jerem/genealogy"),
-    Path("/home/jerem/genealogy-dry-cross"),
-    Path("/home/jerem/genealogy-kindred"),
-    Path("/home/jerem/ai-genealogy"),
+    _BASE / "genealogy",
+    _BASE / "genealogy-dry-cross",
+    _BASE / "genealogy-kindred",
+    _BASE / "ai-genealogy",
 ]
 
 # Dirs that hold structured data / history / generated / non-graph content — never the graph.
