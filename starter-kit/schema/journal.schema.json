@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-genealogy/starter-kit/schema/journal.schema.json",
+  "title": "AI Genealogy Research Journal (frontmatter, v2)",
+  "description": "JSON Schema for the YAML frontmatter of a per-person research journal (research/journals/@ID@.md). The journal is the single source of truth for OBSERVED PLATFORM CLAIMS, the classified DISAGREEMENTS, and the research TRAIL/STATUS; data/tree.json remains the conclusion store. This schema validates the parsed frontmatter object, NOT the prose body. It is a strict SUPERSET: additionalProperties:true so each tree's pre-v2 extra fields (priority, gps_compliance, lineage_branch, research_status, ...) stay valid. See methodology/07-cross-platform-reconciliation.md.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "gedcom_id", "status", "schema_version"],
+
+  "properties": {
+    "type": { "const": "ResearchJournal" },
+    "schema_version": {
+      "description": "Journal frontmatter schema version. v2 introduces platform_identity + disagreements + status_summary.",
+      "const": 2
+    },
+    "gedcom_id": { "$ref": "#/$defs/PersonId" },
+    "person": { "type": "string" },
+    "canonical_name": { "type": "string" },
+    "generation": { "type": ["integer", "string", "null"] },
+    "status": { "type": "string" },
+    "platform_identity": { "$ref": "#/$defs/PlatformIdentity" },
+    "disagreements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Disagreement" }
+    },
+    "status_summary": { "$ref": "#/$defs/StatusSummary" }
+  },
+
+  "$defs": {
+    "PersonId": {
+      "description": "Tree person id. Primary @I<digits>@; synthetic @I_<NAME>@ / @I_FS_*@; kindred also @FS_*@.",
+      "type": "string",
+      "pattern": "^@?(I|FS_)"
+    },
+
+    "Platform": {
+      "description": "A platform leg in the claim/reconciliation comparison.",
+      "type": "string",
+      "enum": ["tree", "ancestry", "familysearch", "wikitree", "findagrave", "geni"]
+    },
+
+    "PlatformIdentity": {
+      "description": "Per-platform identity mapping: which external profile THIS person is, and whether that mapping is verified. Replaces the scattered fs_pid/wt_id/ancestry_id (genealogy) and familysearch/wikitree/findagrave/ancestry (kindred) fields. A wrong mapping is an IDENTITY-class disagreement.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ancestry":    { "$ref": "#/$defs/PlatformRef" },
+        "familysearch":{ "$ref": "#/$defs/PlatformRef" },
+        "wikitree":    { "$ref": "#/$defs/PlatformRef" },
+        "findagrave":  { "$ref": "#/$defs/PlatformRef" },
+        "geni":        { "$ref": "#/$defs/PlatformRef" }
+      }
+    },
+    "PlatformRef": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "verified": { "type": "boolean" }
+      }
+    },
+
+    "Severity": { "type": "string", "enum": ["high", "med", "low"] },
+
+    "Status": {
+      "description": "Disagreement lifecycle (DAG): open -> researching -> lead_found -> contributed -> resolved | held | disproven.",
+      "type": "string",
+      "enum": ["open", "researching", "lead_found", "contributed", "resolved", "held", "disproven"]
+    },
+
+    "Class": {
+      "description": "The 7 disagreement classes. VITAL=birth/death date or place. PARENTAGE=a parent edge (incl. null-vs-named brick-wall leads). IDENTITY=a platform-id maps to a different person. CONFLATION=two people fused into one node. OVERCLAIM=confidence exceeds what sources prove. SOURCE=wrong-person/defective source. COVERAGE=platform not searched / no negative search.",
+      "type": "string",
+      "enum": ["VITAL", "PARENTAGE", "IDENTITY", "CONFLATION", "OVERCLAIM", "SOURCE", "COVERAGE"]
+    },
+
+    "TrailEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["date", "by", "note"],
+      "properties": {
+        "date": { "type": "string" },
+        "by": { "description": "Producer or human that wrote this entry, e.g. recon-walk, migration, brickwall-discriminator, human.", "type": "string" },
+        "note": { "type": "string" }
+      }
+    },
+
+    "Disagreement": {
+      "description": "One cross-platform disagreement on one (cls, field) for this person. Idempotency key is (cls, field) within a journal — journal_io upserts by that key.",
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["cls", "field", "values", "status", "severity"],
+      "properties": {
+        "cls": { "$ref": "#/$defs/Class" },
+        "field": {
+          "description": "The specific field/subtype in conflict: a vital (birth_place, birth_date, death_date, death_place), a parent slot (father, mother), an identity locus (fs_mapping, wt_mapping), or a conformance check id (CONF-1, COV-1, ...).",
+          "type": "string"
+        },
+        "values": {
+          "description": "The multi-platform comparison. Each leg is the value that platform asserts, or null where that leg has no value / wasn't compared (most are tree+familysearch today; ancestry/wikitree fill in as coverage grows).",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tree":         { "type": ["string", "number", "null"] },
+            "ancestry":     { "type": ["string", "number", "null"] },
+            "familysearch": { "type": ["string", "number", "null"] },
+            "wikitree":     { "type": ["string", "number", "null"] }
+          }
+        },
+        "status": { "$ref": "#/$defs/Status" },
+        "severity": { "$ref": "#/$defs/Severity" },
+        "verdict": {
+          "description": "The producer's machine verdict for this comparison.",
+          "type": "string",
+          "enum": ["conflict", "variant", "brick_lead", "overclaim", "coverage_gap", "conformance", "conflation_suspect", "identity_recheck"]
+        },
+        "next_record": {
+          "description": "The named primary record that would resolve this disagreement, if known.",
+          "type": ["string", "null"]
+        },
+        "first_seen": { "type": "string" },
+        "last_checked": { "type": "string" },
+        "trail": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TrailEntry" }
+        }
+      }
+    },
+
+    "StatusSummary": {
+      "description": "DERIVED roll-up of the disagreements[] statuses, recomputed by journal_io on every write. high_open + worst_open_severity are the inputs to the confidence-cap (JOUR-1).",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "open": { "type": "integer" },
+        "researching": { "type": "integer" },
+        "lead_found": { "type": "integer" },
+        "contributed": { "type": "integer" },
+        "resolved": { "type": "integer" },
+        "held": { "type": "integer" },
+        "disproven": { "type": "integer" },
+        "high_open": { "type": "integer" },
+        "worst_open_severity": { "type": ["string", "null"], "enum": ["high", "med", "low", null] }
+      }
+    }
+  }
+}

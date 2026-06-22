@@ -34,7 +34,7 @@ corpus or `tree.json`.
 | Reference (hub + repos) | `RefDoc` · `Methodology` · `PlatformGuide` · `Lesson` |
 
 Definitions:
-- `ResearchJournal` — per-person research log (`research/journals/@ID@.md`); the per-person graph node. Already in use.
+- `ResearchJournal` — per-person research log (`research/journals/@ID@.md`); the per-person graph node, and the single source of truth for observed platform claims + classified disagreements + research status. Already in use. **Frontmatter v2 contract:** `starter-kit/schema/journal.schema.json` (a strict superset — `platform_identity`, `disagreements[]`, derived `status_summary`; pre-v2 extras stay valid). Written only through `starter-kit/scripts/journal_io.py`. See `methodology/07-cross-platform-reconciliation.md`.
 - `Session` — dated research-session log (`research/sessions/`). Already in use.
 - `BrickWall` — an open research blocker + status (`brickwall_*.md`, `research/brick-walls/`). Already in use.
 - `Correction` — a documented detach / ID-swap / disproof (`data/corrections/`). Already in use.
