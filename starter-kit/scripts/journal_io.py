@@ -73,17 +73,55 @@ def journal_path(root, pid: str, must_exist: bool = False) -> Path | None:
 
 
 # ---------------------------------------------------------------- parse / write
+_FM_OPEN = re.compile(r"^---[ \t]*\n")
+_FM_CLOSE = re.compile(r"\n---[ \t]*\n")
+
+
 def split_frontmatter(text: str) -> tuple[dict, str]:
-    if _okf_split is not None:
-        return _okf_split(text)
-    m = _FM.match(text)
-    if not m:
+    """Tolerant on read, exact on body. Accepts an opening/closing fence with trailing
+    whitespace (legacy journals vary: `---\\n`, `--- \\n`), but extracts the body as the
+    EXACT substring after the closing fence's newline — never eating the body's own leading
+    newline. This makes it a clean inverse of `write` (round-trip fixpoint holds) while still
+    reading every pre-v2 journal. (The okf/regex splitter eats trailing whitespace, so
+    journal_io keeps its own.)"""
+    mo = _FM_OPEN.match(text)
+    if not mo:
         return {}, text
+    mc = _FM_CLOSE.search(text, mo.end() - 1)
+    if not mc:
+        return {}, text
+    block = text[mo.end():mc.start() + 0]  # up to (not incl) the closing fence's leading \n
+    body = text[mc.end():]
+    fm = _load_block(block)
+    return (fm if isinstance(fm, dict) else {}), body
+
+
+_INDICATOR_VAL = re.compile(r"(?m)^([A-Za-z][\w-]*):[ \t]*([?&*!|>@`%].*)$")
+_SCALAR_LINE = re.compile(r"^([A-Za-z][\w-]*):[ \t]*(.*?)[ \t]*$", re.MULTILINE)
+
+
+def _load_block(block: str):
+    """Parse a frontmatter YAML block, surviving the legacy quirks of hand/script-written
+    journals: a bare YAML-indicator value (e.g. `lineage_part: ?`) is quoted and retried
+    (so proper types like `generation: 14` stay int); a final scalar-line fallback handles
+    anything still unparseable. v2 journals (clean YAML) parse on the first try."""
+    if not block.strip():
+        return {}
     try:
-        fm = yaml.safe_load(m.group(1))
+        return yaml.safe_load(block)
     except yaml.YAMLError:
-        fm = None
-    return (fm if isinstance(fm, dict) else {}), text[m.end():]
+        pass
+    safe = _INDICATOR_VAL.sub(lambda m: f"{m.group(1)}: '{m.group(2).strip()}'", block)
+    try:
+        return yaml.safe_load(safe)
+    except yaml.YAMLError:
+        pass
+    fm: dict = {}
+    for key, raw in _SCALAR_LINE.findall(block):
+        v = raw.strip().strip("\"'")
+        if v:
+            fm[key] = v
+    return fm
 
 
 def parse(path) -> dict:
@@ -100,8 +138,21 @@ def parse(path) -> dict:
             "status_summary": fm.get("status_summary") or {}}
 
 
+def jsonsafe(o):
+    """Recursively convert YAML date/datetime values to ISO strings so frontmatter is JSON-
+    serializable and round-trips as a string (yaml.safe_load otherwise yields date objects
+    for `2026-04-11`, which break json + the round-trip fixpoint). Lossless: same ISO text."""
+    if isinstance(o, dict):
+        return {k: jsonsafe(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [jsonsafe(v) for v in o]
+    if isinstance(o, (datetime.date, datetime.datetime)):
+        return o.isoformat()
+    return o
+
+
 def _dump_frontmatter(fm: dict) -> str:
-    return yaml.safe_dump(fm, sort_keys=False, default_flow_style=False,
+    return yaml.safe_dump(jsonsafe(fm), sort_keys=False, default_flow_style=False,
                           allow_unicode=True, width=1000)
 
 
