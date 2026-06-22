@@ -28,9 +28,9 @@
 
   "$defs": {
     "PersonId": {
-      "description": "Tree person id. Primary @I<digits>@; synthetic @I_<NAME>@ / @I_FS_*@; kindred also @FS_*@.",
+      "description": "Tree person id, matching tree.json's id verbatim. Primary @I<digits>@; many synthetic forms exist across the trees (@I_<NAME>@, @I_FS_*@, @FS_*@, and bare ANC_*/RES_*/GENI_* stems). Accept any non-empty id that starts with an optional @ and a letter.",
       "type": "string",
-      "pattern": "^@?(I|FS_)"
+      "pattern": "^@?[A-Za-z]"
     },
 
     "Platform": {
