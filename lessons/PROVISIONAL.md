@@ -1079,3 +1079,32 @@ ThruLines exist only if the Ancestry login has a linked AncestryDNA test. Do not
 All sister projects share one lockfile (`~/.wikitree-contribution-log.jsonl`) but each ships its own `wt-rate-check.py` (kindred a separate fork, dry-cross a symlink to genealogy). The `DAILY_CAP`/`WEEKLY_CAP` constants drifted apart (genealogy 350/600 vs kindred 50/500 vs the documented 50/150), so the enforced budget depended on which script happened to run — a correctness bug. Reconcile all three to one number and keep them in lockstep (or symlink the siblings to genealogy's copy). Reconciled to 350/600 on 2026-06-04.
 
 **Needs confirmation in**: genealogy-kindred, genealogy-dry-cross
+
+---
+
+## The per-person journal is the single source of truth for cross-platform disagreements
+
+**Source**: genealogy, genealogy-dry-cross, genealogy-kindred (2026-06-22 reconciliation refactor)
+
+Cross-platform disagreement signal (tree vs Ancestry/FS/WikiTree) had scattered across ~15
+incompatible, gitignored fragment JSONs with different keys, granularity, and no status — so
+the same finding was rediscovered every session and resolved items resurfaced. The fix was
+structural, not another report:
+
+1. **One write path.** Every producer writes disagreements through a single library
+   (`journal_io.upsert_disagreement`, idempotent on `(class, field)`); no producer owns a
+   bespoke schema. The schemas were incompatible because the contract lived nowhere — put it
+   in the journal frontmatter (v2 schema, `starter-kit/schema/journal.schema.json`).
+2. **Derived, never authored, index.** The queryable backlog is computed by parsing journals
+   (`build-disagreement-index.py`), so resolving a disagreement drops it from the next run —
+   a registry built *from* the fragments is just another competing source of truth (we built
+   one, then retired it).
+3. **Extend, never fork, the frontmatter.** The v2 schema is a strict superset
+   (`additionalProperties: true`); each tree's divergent pre-v2 fields stay valid. Source
+   platform_identity from `tree.json` (the authority), not stale per-journal id copies.
+4. **Cap, don't hide, overclaim.** An open high-severity disagreement mechanically caps the
+   node's confidence to POSSIBLE (a ceiling, not a resolution); blocking stalls commits and
+   warn-only lets overclaim persist. Mechanical-only auto-close (person gone / value now
+   matches); judgment closes stay human. See `methodology/07-cross-platform-reconciliation.md`.
+
+**Needs confirmation in**: genealogy, genealogy-dry-cross, genealogy-kindred (tooling shipped to all three 2026-06-22; confirm after a steady-state operating cycle, then promote to LESSONS.md as [CONFIRMED x3])
