@@ -59,6 +59,10 @@ SEVERITY = {
     "CONF-1": "ERROR", "CONF-2": "ERROR", "CONF-3": "ERROR",
     "SRC-1": "WARN", "COV-1": "WARN", "DOC-1": "WARN",
     "UPG-1": "WARN", "DUR-1": "WARN", "GEN-1": "WARN",
+    # Consistency gate (07): the per-person journal's reconciliation vs the tree conclusion.
+    # JOUR-1 (the confidence cap) ships WARN for one ratchet cycle to reveal the backlog,
+    # then promotes to ERROR once apply-confidence-cap.py has drained it.
+    "JOUR-1": "WARN", "JOUR-2": "WARN",
 }
 STANDARD_REF = {
     "CONF-1": "02 §Confidence Rules (VERIFIED >=2 T1/2a)",
@@ -70,6 +74,8 @@ STANDARD_REF = {
     "UPG-1":  "02 §POSSIBLE Seeding (upgrade_path required)",
     "DUR-1":  "02 §Durability Tiering (anchor Ancestry evidence to FS ARK)",
     "GEN-1":  "01 §Generation integrity (parent generation = child + 1)",
+    "JOUR-1": "07 §Confidence cap (open high-severity disagreement caps confidence)",
+    "JOUR-2": "07 §Journal coverage (a concluded direct-line person needs a journal)",
 }
 REQUIRED_SOURCE_FIELDS = ["name", "title", "tier", "platform", "type",
                           "added", "proves", "evidence_type"]
@@ -146,7 +152,37 @@ def platform_searched(p, key, src_pred):
 # --------------------------------------------------------------------------- #
 # checks — each returns a list of offending person IDs
 # --------------------------------------------------------------------------- #
-def run_checks(persons):
+def _journal_index(root):
+    """({pid: status_summary}, {pid with a journal}) — or (None, None) if journal_io/yaml is
+    unavailable (then JOUR checks are skipped, keeping conformance dependency-tolerant)."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "journal_io", Path(__file__).resolve().parent / "journal_io.py")
+        Jio = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(Jio)
+    except Exception:
+        return None, None
+    jdir = root / "research" / "journals"
+    if not jdir.exists():
+        return {}, set()
+    summ, have = {}, set()
+    for f in jdir.glob("*.md"):
+        try:
+            fm, _ = Jio.split_frontmatter(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        pid = fm.get("gedcom_id")
+        if not pid:
+            continue
+        ss = fm.get("status_summary") or {}
+        for k in (pid, str(pid).strip("@")):
+            have.add(k)
+            summ[k] = ss
+    return summ, have
+
+
+def run_checks(persons, root=None):
     viol = {k: [] for k in SEVERITY}
     by_id = {p.get("id"): p for p in persons if p.get("id")}
     # Convergence ancestors: a parent whose children sit at 2+ distinct generations is
@@ -213,6 +249,23 @@ def run_checks(persons):
                     continue
                 viol["GEN-1"].append(pid)
                 break
+
+    # --- consistency gate (07): journal reconciliation vs tree conclusion ----------
+    if root is not None:
+        summ, have = _journal_index(root)
+        if summ is not None:
+            for p in persons:
+                pid = p.get("id")
+                if not pid or confidence(p) not in ("VERIFIED", "PROBABLE"):
+                    continue
+                ss = summ.get(pid) or {}
+                # JOUR-1: an open high-severity disagreement caps confidence (resolve with
+                # apply-confidence-cap.py — mechanical downgrade to POSSIBLE + audit note).
+                if ss.get("high_open", 0) > 0:
+                    viol["JOUR-1"].append(pid)
+                # JOUR-2: a concluded DIRECT-LINE person with no journal can't be reconciled.
+                if have is not None and p.get("lineage_part") is not None and pid not in have:
+                    viol["JOUR-2"].append(pid)
     return viol
 
 
@@ -315,7 +368,7 @@ def main():
         return 1
     root = tree_path.resolve().parent.parent  # project root = parent of data/
     persons = json.loads(tree_path.read_text()).get("persons", [])
-    viol = run_checks(persons)
+    viol = run_checks(persons, root)
 
     if args.baseline:
         (root / BASELINE_FILE).write_text(json.dumps(counts(viol), indent=2) + "\n")
