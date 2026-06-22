@@ -175,7 +175,12 @@ def _journal_index(root):
         pid = fm.get("gedcom_id")
         if not pid:
             continue
-        ss = fm.get("status_summary") or {}
+        # Recompute high_open LIVE from the disagreements list — do NOT trust the stored
+        # status_summary (it can go stale if a non-journal_io writer edited disagreements
+        # without recomputing it). This keeps JOUR-1 reading the SAME derivation as
+        # apply-confidence-cap.py (which also recomputes live), so the gate and the cap can
+        # never disagree about which nodes are over-confident.
+        ss = Jio.recompute_status_summary(fm.get("disagreements") or [])
         for k in (pid, str(pid).strip("@")):
             have.add(k)
             summ[k] = ss
