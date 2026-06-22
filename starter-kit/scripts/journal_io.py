@@ -254,6 +254,10 @@ def upsert_disagreement(root, pid: str, record: dict, by: str, today: str | None
         return {"date": today, "by": by, "note": note}
 
     if idx is None:
+        # auto_close on a disagreement that doesn't exist = the conflict never existed (or was
+        # already cleared): nothing to record. Don't manufacture a resolved-from-nothing entry.
+        if record.get("auto_close"):
+            return {"action": "noop", "journal": str(path)}
         rec = {
             "cls": cls, "field": field,
             "values": record.get("values") or {},
