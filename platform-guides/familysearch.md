@@ -235,3 +235,15 @@ If a pipeline needs record discovery by surname/date, prefer:
 An FS profile returning HTTP 204 on the sources endpoint is not an error — it is the canonical response for profiles with zero attached sources. For weak-confidence targets (POSSIBLE/UNVERIFIED), a ~60% 204 rate is normal (GEDCOM-imported profiles without source attachment). Don't retry 204s; they are final.
 
 Downstream: a harvest that reports "profiles checked: 500, new sources found: 20" at Gen 9+ is behaving correctly; the remaining 480 profiles are simply source-sparse on FS. Pursue records via archive paths (ONSITE backlog), not via retry.
+
+---
+
+## Reconciliation artifacts (recon-walk vs FS)
+
+When a reconciliation walk captures FS values to compare against the tree, two FS-specific artifacts generate false PARENTAGE/VITAL disagreements. Recognising them before spending research budget is most of the work of draining the backlog (see `methodology/07-cross-platform-reconciliation.md`).
+
+**Combined-parent-string.** The FS parent *display* frequently packs both parents into one field ("Mother Name, Father Name"), and sometimes the father's name lands in the mother slot. A comparator that diffs this string against the tree's single parent name reports a mismatch even when the tree's stored `parent_id` already maps 1:1 to the FS `/parents` id. Before treating an FS parentage disagreement as real, resolve the tree parent-node's fs_id and compare it *structurally* against `/platform/tree/persons/{PID}/parents` — most deep-gen "conflicts" (~80% in the medieval-nobility tail) disprove this way. Do **not** try to batch-classify this from the name strings alone: the same field can list two competing same-role parents (e.g. two candidate mothers), which a substring match would silently collapse into a false "same," so the disprove-vs-hold call needs the live structural parent-id comparison, not a string heuristic.
+
+**Stale snapshot.** The observed FS value is whatever the walk captured at snapshot time, and FS is edited continuously, so a value flagged months ago may since have been corrected upstream. A live re-fetch (`GET /platform/tree/persons/{PID}`) frequently shows FS now agrees with the tree and the conflict no longer exists. Always re-fetch live before adjudicating a captured VITAL/PARENTAGE disagreement, and disprove the ones where live FS matches; this is a large fraction of shallow date/place "conflicts."
+
+**`/parents` HTTP 204 = no parents on FS, a genuine no-lead, not a fetch error.** Read it as "FS has no parent for this person," not as a failure to retry. The corollary matters for graft detection: when FS returns 204 on `/parents` but the tree carries a speculative parent-couple above that person, the graft is tree-side only (FS does not share it) — hold for a human confidence-downgrade rather than auto-trusting the tree edge.
