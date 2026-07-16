@@ -1108,3 +1108,29 @@ structural, not another report:
    matches); judgment closes stay human. See `methodology/07-cross-platform-reconciliation.md`.
 
 **Needs confirmation in**: genealogy, genealogy-dry-cross, genealogy-kindred (tooling shipped to all three 2026-06-22; confirm after a steady-state operating cycle, then promote to LESSONS.md as [CONFIRMED x3])
+
+---
+
+## Re-verify a held pile against the live platform before treating it as a research queue
+
+**Source**: genealogy, genealogy-dry-cross, genealogy-kindred (2026-07-11 held-pile adjudication)
+
+A held disagreement pile is not automatically a research queue — before spending research
+budget working it person-by-person, re-verify it live against the platform first, since a
+live re-fetch closes a large fraction for free. The 2026-07-11 adjudication re-verified all
+328 held disagreement items live against FamilySearch across the three trees (genealogy 252,
+dry-cross 65, kindred 11 dispositioned) and closed roughly 40% of the pile (328→198) without
+pulling a single new record: stale snapshots where FS had since been corrected upstream,
+wrong-id artifacts, and fixes that were already applied elsewhere. The items that survived
+were then re-classified by the record that would settle them — a named will, parish register,
+Visitation, or IPM — rather than by disagreement class, which turns a held pile into a
+record-sourcing worklist that can be batched by archive/volume instead of worked
+person-by-person.
+
+**Corollary**: schedule held-pile re-verification as a recurring cheap pass, since platforms
+are edited continuously and a held verdict ages, and only spend research budget on the
+remainder after that pass runs.
+
+**Needs confirmation in**: genealogy, genealogy-dry-cross, genealogy-kindred (all three already
+dispositioned in the 2026-07-11 session; confirm as a durable pattern on the next scheduled
+held-pile pass, then promote to LESSONS.md as [CONFIRMED x3])
