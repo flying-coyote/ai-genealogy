@@ -58,7 +58,7 @@ def main() -> int:
                 "date": today, "type": "confidence_cap",
                 "concern": f"Confidence capped {old}->POSSIBLE: open high-severity disagreement(s) "
                            f"[{why}] in the journal (JOUR-1). Mechanical ceiling; resolve the "
-                           f"disagreement to lift. See research/journals/{p['id'].strip('@')}.md."})
+                           f"disagreement to lift. See {J.journal_path(root, p['id']).relative_to(root)}."})
             p["validation"] = v
 
     print(json.dumps({"repo": root.name, "mode": "apply" if a.apply else "dry-run",

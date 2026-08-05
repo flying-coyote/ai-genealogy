@@ -55,18 +55,41 @@ SEV_RANK = {"high": 3, "med": 2, "low": 1}
 
 
 # ---------------------------------------------------------------- path resolver
+def _pointer_target(path: Path, jdir: Path) -> Path | None:
+    """Return the canonical journal a JournalPointer stub redirects to, or None if `path`
+    is a real journal. Consolidation stubs (2026-08-05 divergence merge) sit at the
+    @-stripped filename with frontmatter `type: JournalPointer` + `canonical_journal`."""
+    try:
+        with path.open(encoding="utf-8") as f:
+            head = f.read(4096)  # stubs are tiny; a real journal just fails the type check
+    except OSError:
+        return None
+    fm, _ = split_frontmatter(head)
+    if not isinstance(fm, dict) or fm.get("type") != "JournalPointer":
+        return None
+    target = fm.get("canonical_journal")
+    return (jdir / str(target)) if target else None
+
+
 def journal_path(root, pid: str, must_exist: bool = False) -> Path | None:
     """Resolve the journal file for a tree id, absorbing the @I123@.md vs I123.md hazard.
 
     On-disk journals use the raw @-form (@I123@.md); some writers historically computed the
-    @-stripped form (I123.md). We probe both and (when creating) prefer the @-form."""
+    @-stripped form (I123.md). We probe both and (when creating) prefer the @-form. A
+    JournalPointer stub is never returned: it is followed to the canonical journal it names,
+    so callers can never read or append to a stub."""
     jdir = Path(root) / "research" / "journals"
     raw = pid
     stripped = pid.strip("@")
     cands = [jdir / f"{raw}.md", jdir / f"{stripped}.md"]
     for c in cands:
         if c.exists():
-            return c
+            target = _pointer_target(c, jdir)
+            if target is None:
+                return c
+            if target != c and target.exists():
+                return target
+            continue  # dangling/self pointer: keep probing the other form
     if must_exist:
         return None
     return cands[0]  # canonical @-form for new files
