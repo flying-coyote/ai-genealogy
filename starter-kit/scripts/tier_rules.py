@@ -86,22 +86,6 @@ def distinct(sources):
     return list(seen.values())
 
 
-def is_flagged_lead(source):
-    """True if the source declares itself a research lead rather than evidence.
-
-    Since 2026-08-08 a Tier 5 source may sit in evidence.sources when flagged this way:
-    recording that a claim was examined and what it rests on beats moving it out of
-    sight. Without a flag it is still an error, because an unflagged tree row reads as
-    evidence to every consumer.
-    """
-    if source.get("lead") is True or source.get("is_lead") is True:
-        return True
-    for key in ("evidence_type", "type", "role", "status"):
-        if "lead" in _asstr(source.get(key)).lower():
-            return True
-    return "lead" in _asstr(source.get("proves")).lower()
-
-
 def person_sources(person):
     """Sources that support the PERSON-level confidence label.
 
@@ -150,17 +134,27 @@ def evaluate(person):
             continue
         raw = s.get("tier")
         major = tier_major(s)
-        if raw is None:
-            warnings.append(f"Person {pid}: source[{i}] has no tier — it will be read as a lead")
+        # tier 0 is a deliberate convention, not junk: kindred's
+        # classify-untiered-sources.py writes it on audit-pointer rows (Find A Grave,
+        # Social Security, BillionGraves) to mean "catalogued, not evidence". Treat it
+        # like an absent tier — a lead — rather than erroring on 49 rows that are doing
+        # exactly what they were designed to do.
+        if raw is None or raw == 0:
+            warnings.append(f"Person {pid}: source[{i}] has no usable tier — "
+                            f"it will be read as a lead")
         elif major is None:
             errors.append(f"Person {pid}: source[{i}] has an unusable tier {raw!r} "
                           f"(expected an integer 1-5)")
         elif not isinstance(raw, int):
             warnings.append(f"Person {pid}: source[{i}] tier {raw!r} is not an integer; "
                             f"read as {major}. The schema types tier as integer 1-5")
-        if major == 5 and not is_flagged_lead(s):
-            errors.append(f"Person {pid}: source[{i}] is Tier 5 (member tree) in "
-                          f"evidence.sources but is not flagged as a lead")
+        # No error for Tier 5 in evidence.sources. It was one until 2026-08-08, which is
+        # the sole reason every remediation demoted tree rows to Tier 4 instead of 5 and
+        # thereby slipped past CONF-3. A first version of this module instead demanded an
+        # explicit "lead" flag, which produced 1,372 errors in dry-cross for not adopting
+        # a field invented the same day — and the flag was redundant anyway, since the
+        # tier is itself the declaration. What matters is what a Tier 5 row can support,
+        # and the concluded-label check below enforces that.
 
     for s in legacy_sources(person):
         if isinstance(s, dict):
@@ -182,15 +176,20 @@ def evaluate(person):
         if len(tier12) < VERIFIED_MIN_TIER2_SOURCES:
             errors.append(f"Person {pid}: VERIFIED but only {len(tier12)} distinct Tier 1-2 "
                           f"source(s) (need >={VERIFIED_MIN_TIER2_SOURCES})")
-    elif confidence == "PROBABLE":
-        if not srcs:
-            warnings.append(f"Person {pid}: PROBABLE with no sources documented")
-        elif not [s for s in uniq if (tier_major(s) or 9) <= 3]:
-            warnings.append(f"Person {pid}: PROBABLE but no Tier 1-3 source")
-
-    if confidence in CONCLUDED and majors and min(majors) >= LEAD_TIER_FLOOR:
+    # The tier floor: every source at Tier 4-5 cannot support a concluded label.
+    below_floor = bool(majors) and min(majors) >= LEAD_TIER_FLOOR
+    if confidence in CONCLUDED and below_floor:
         errors.append(f"Person {pid}: {confidence} but every source is Tier "
                       f"{min(majors)} or weaker (Tier 4-5 only caps at POSSIBLE)")
+
+    if confidence == "PROBABLE":
+        if not srcs:
+            warnings.append(f"Person {pid}: PROBABLE with no sources documented")
+        elif not below_floor and not [s for s in uniq if (tier_major(s) or 9) <= 3]:
+            # Suppressed when below_floor already fired: "every source is Tier 4+" and
+            # "no Tier 1-3 source" are the same fact stated twice, and reporting both
+            # inflated 20 genealogy persons into two findings each.
+            warnings.append(f"Person {pid}: PROBABLE but no Tier 1-3 source")
 
     # --- parent-side labels ---------------------------------------------------------
     # Nothing validated these before 2026-08-08. Person-level evidence does not
