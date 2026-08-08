@@ -107,18 +107,59 @@ def tier_major(s):
     m = re.search(r"[1-5]", asstr(t))
     return int(m.group()) if m else None
 
+# Kept byte-identical in meaning to tier_rules._GENERIC_LOCATOR. A locator naming a
+# COLLECTION or a search is not a record identity: `sse.dll?dbid=7249` is the whole
+# Millennium File. 2,156 rows across the three trees carry one, and treating them as
+# identity merged genuinely different records.
+GENERIC_LOCATOR = re.compile(
+    r"/collections/\d+/?$|/hints?(/|\?|$)|discoveryui-content/view/?$|/search/?$", re.I)
+
+
+def is_record_locator(loc):
+    low = loc.lower()
+    if "sse.dll" in low and not re.search(r"[?&](h|indiv|pid|recid)=", low):
+        return False
+    return not GENERIC_LOCATOR.search(low)
+
+
 def source_identity(s):
     """A key that two source objects share when they describe the same source.
 
     The standard requires VERIFIED to rest on >=2 *independent* sources, and the
-    trees hold literal duplicates — one genealogy parent side carries 71 identical
-    copies of a single tree assertion — so counting raw rows lets one source satisfy
-    a two-source rule. Prefer the persistent locator; fall back to title+tier.
+    trees hold literal duplicates — two genealogy parent sides carry 71 byte-identical
+    copies each of a single Legacy NFS assertion — so counting raw rows lets one source
+    satisfy a two-source rule. Prefer the persistent record locator; fall back to
+    title+tier, including when the only locator names a collection rather than a record.
     """
     loc = (asstr(s.get("ark")) or asstr(s.get("url"))).strip().lower()
-    if loc:
+    if loc and is_record_locator(loc):
         return loc
     return (asstr(s.get("name") or s.get("title")).strip().lower(), asstr(s.get("tier")))
+
+
+# A project may declare a documented VERIFIED fork in .conformance-profile.json. Until
+# 2026-08-08 this checker applied the cross-project rule everywhere, which meant it
+# contradicted the standard it checks against: kindred's rule is recorded in
+# methodology/02-evidence-standards.md as a named exception, and 36 of the 41 CONF-1
+# violations the checker reported there are not violations under it.
+PROFILE_FILE = ".conformance-profile.json"
+VERIFIED_RULES = {
+    "standard": {"min_tier": 2, "min_count": 2,
+                 "desc": ">=2 distinct sources at Tier 1-2"},
+    "kindred_t13_ge3": {"min_tier": 3, "min_count": 3,
+                        "desc": ">=3 distinct sources at Tier 1-3 (documented kindred fork)"},
+}
+
+
+def load_profile(root):
+    if root is None:
+        return "standard"
+    try:
+        cfg = json.loads((Path(root) / PROFILE_FILE).read_text())
+        name = cfg.get("verified_rule")
+        return name if name in VERIFIED_RULES else "standard"
+    except Exception:
+        return "standard"
 
 def distinct(srcs):
     """De-duplicated source list, first occurrence wins."""
@@ -235,17 +276,18 @@ def run_checks(persons, root=None):
                 if p.get(pf):
                     pcg[p[pf]].add(g)
     convergence = {k for k, v in pcg.items() if len(v) > 1}
+    rule = VERIFIED_RULES[load_profile(root)]
     for p in persons:
         pid = p.get("id", "<no-id>")
         c = confidence(p)
         S = sources(p)
         # "independent" is the operative word in the standard, so count distinct
         # sources rather than rows — see source_identity().
-        tier2 = [s for s in distinct(S) if (tier_major(s) or 9) <= 2]
+        tier2 = [s for s in distinct(S) if (tier_major(s) or 9) <= rule["min_tier"]]
         majors = [tier_major(s) for s in S if tier_major(s)]
 
         # ERROR: confidence gate
-        if c == "VERIFIED" and len(tier2) < VERIFIED_MIN_TIER2_SOURCES:
+        if c == "VERIFIED" and len(tier2) < rule["min_count"]:
             viol["CONF-1"].append(pid)
         if c in CONCLUDED and len(S) == 0:
             viol["CONF-2"].append(pid)

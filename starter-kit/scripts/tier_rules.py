@@ -30,6 +30,44 @@ CONCLUDED = ("VERIFIED", "PROBABLE")
 # trees. Neither supports a concluded label.
 LEAD_TIER_FLOOR = 4
 
+# The VERIFIED rule is not the same in every project, and pretending otherwise is what
+# this module exists to stop. methodology/02-evidence-standards.md records one named
+# exception: the kindred tree scores VERIFIED at three or more distinct Tier 1-3 sources
+# rather than two at Tier 1-2, because applying the cross-project rule would wrongly strip
+# 34 profiles whose support is genuine published work. Until 2026-08-08 the checker applied
+# the cross-project rule to kindred anyway, so the gate contradicted the standard it checks
+# against and reported 41 violations, 36 of which are not violations under kindred's own
+# documented rule. A project declares its rule in .conformance-profile.json; the fork then
+# reads as a decision rather than as drift.
+PROFILE_FILE = ".conformance-profile.json"
+VERIFIED_RULES = {
+    "standard": {"min_tier": 2, "min_count": 2,
+                 "desc": ">=2 distinct sources at Tier 1-2"},
+    "kindred_t13_ge3": {"min_tier": 3, "min_count": 3,
+                        "desc": ">=3 distinct sources at Tier 1-3 (documented kindred fork, "
+                                "02 §Confidence Rules)"},
+}
+
+
+def load_profile(root):
+    """Name of the project's VERIFIED rule. Absent file or unknown name -> 'standard'."""
+    import json
+    import pathlib
+    try:
+        cfg = json.loads((pathlib.Path(root) / PROFILE_FILE).read_text())
+        name = cfg.get("verified_rule")
+        return name if name in VERIFIED_RULES else "standard"
+    except Exception:
+        return "standard"
+
+
+def verified_ok(sources, rule="standard"):
+    """Does this source list carry what VERIFIED claims, under the named rule?"""
+    spec = VERIFIED_RULES.get(rule) or VERIFIED_RULES["standard"]
+    qualifying = [s for s in distinct(sources)
+                  if (tier_major(s) or 9) <= spec["min_tier"]]
+    return len(qualifying) >= spec["min_count"]
+
 
 def _asdict(x):
     return x if isinstance(x, dict) else {}
@@ -63,15 +101,42 @@ def tier_major(source):
     return int(m.group()) if m else None
 
 
+# A locator naming a COLLECTION or a search rather than a record. 2,156 rows across the
+# three trees carry one: `sse.dll?dbid=7249` is the whole Millennium File, not an entry in
+# it. Treating those as identity merged genuinely different records — on genealogy
+# @I132246180553@ Thomas Hardeman, "Virginia Soldiers of 1776", "American Civil War
+# Soldiers" and the 1790 Federal Census all carry `sse.dll?dbid=9000`, so first-occurrence-
+# wins kept a Tier 3 row and silently discarded the Tier 2 census.
+_GENERIC_LOCATOR = re.compile(
+    r"/collections/\d+/?$"            # a collection, with no /records/<id> after it
+    r"|/hints?(/|\?|$)"               # a hint list: a suggestion, not a record
+    r"|discoveryui-content/view/?$"   # a record viewer pointed at nothing
+    r"|/search/?$",
+    re.I,
+)
+
+
+def is_record_locator(loc):
+    """True when a url/ark identifies one record rather than a collection or a search."""
+    low = loc.lower()
+    if "sse.dll" in low and not re.search(r"[?&](h|indiv|pid|recid)=", low):
+        return False
+    return not _GENERIC_LOCATOR.search(low)
+
+
 def source_identity(source):
     """Key two source objects share when they describe the same source.
 
     The standard requires >=2 *independent* sources for VERIFIED, and the trees hold
-    literal duplicates — one genealogy parent side carries 71 identical copies of a
-    single tree assertion — so counting rows lets one source satisfy a two-source rule.
+    literal duplicates — two genealogy parent sides carry 71 byte-identical copies each of
+    a single Legacy NFS assertion (@I132566338704@ Richard Thatcher IV and @I236648223271@
+    Christopher Thomas, Jr.) — so counting rows lets one source satisfy a two-source rule.
+
+    A collection-level locator is not identity: those rows fall back to title+tier like any
+    other row carrying no pointer.
     """
     loc = (_asstr(source.get("ark")) or _asstr(source.get("url"))).strip().lower()
-    if loc:
+    if loc and is_record_locator(loc):
         return loc
     return (_asstr(source.get("name") or source.get("title")).strip().lower(),
             _asstr(source.get("tier")))
@@ -119,8 +184,12 @@ def parent_sides(person):
             yield side, blk
 
 
-def evaluate(person):
-    """Return {"errors": [...], "warnings": [...]} of human-readable strings."""
+def evaluate(person, rule="standard"):
+    """Return {"errors": [...], "warnings": [...]} of human-readable strings.
+
+    `rule` names the project's VERIFIED rule (see VERIFIED_RULES); pass
+    load_profile(project_root) to honor a documented fork.
+    """
     pid = person.get("id") or person.get("person_id") or "<no-id>"
     errors, warnings = [], []
 
@@ -173,9 +242,11 @@ def evaluate(person):
         if len(srcs) < 2:
             errors.append(f"Person {pid}: VERIFIED but only {len(srcs)} sources documented "
                           f"(need >=2)")
-        if len(tier12) < VERIFIED_MIN_TIER2_SOURCES:
-            errors.append(f"Person {pid}: VERIFIED but only {len(tier12)} distinct Tier 1-2 "
-                          f"source(s) (need >={VERIFIED_MIN_TIER2_SOURCES})")
+        if not verified_ok(srcs, rule):
+            spec = VERIFIED_RULES.get(rule) or VERIFIED_RULES["standard"]
+            have = len([s for s in uniq if (tier_major(s) or 9) <= spec["min_tier"]])
+            errors.append(f"Person {pid}: VERIFIED but only {have} distinct Tier "
+                          f"1-{spec['min_tier']} source(s) — {spec['desc']}")
     # The tier floor: every source at Tier 4-5 cannot support a concluded label.
     below_floor = bool(majors) and min(majors) >= LEAD_TIER_FLOOR
     if confidence in CONCLUDED and below_floor:
