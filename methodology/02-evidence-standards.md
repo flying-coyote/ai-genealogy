@@ -29,20 +29,44 @@ AI can assist each element — searching platforms, drafting citations, flagging
 
 | Tier | Category | Examples |
 |---|---|---|
-| 1 | Official government records | Birth certificates, death certificates, marriage licenses, probate wills and inventories, military service records, naturalization records, land deeds |
-| 2a | Original near-contemporaneous records | Church registers in original archives, contemporaneous newspapers, original passenger manifests, original draft registrations, original county deed/will books |
-| 2b | Derivative/transcribed near-primary records | Indexed census transcriptions (Ancestry/FS), FindAGrave transcriptions from stones, city directories (abstracts of records), microfilm or digital copies of registers |
-| 3 | Published genealogies with citations | Book genealogies that cite T1-2 sources inline, articles in peer-reviewed genealogical journals (NGSQ, TAG, NEHGR) |
-| 4 | Family documents and oral history | Family bibles, diaries, letters, oral testimony, home photographs with identified subjects |
-| 5 | Online trees | Ancestry member trees, FamilySearch collaborative tree, Geni, WikiTree biographies without inline citations |
+| 1 | Official government records | Birth certificates, death certificates, marriage licenses, probate wills and inventories, military service records, naturalization records, land deeds and warrants |
+| 2a | Original near-contemporaneous records | Church registers in original archives, contemporaneous newspapers, original passenger manifests, original draft registrations, original county deed/will books, heraldic Visitations |
+| 2b | Derivative/transcribed near-primary records | Indexed census transcriptions (Ancestry/FS), FindAGrave memorials showing a photographed stone, city directories (abstracts of records), microfilm or digital copies of registers, obituaries in a verifiable newspaper archive |
+| 3 | Published derivative works and curated shared trees | Book genealogies that cite T1-2 sources inline, articles in peer-reviewed genealogical journals (NGSQ, TAG, NEHGR), peerage compilations (Complete Peerage, Burke's, thepeerage.com), encyclopedias including Wikipedia, lineage-society applications (DAR, SAR, Mayflower), FindAGrave transcriptions with no stone image, and the curated shared trees — FamilySearch Family Tree, WikiTree, Geni |
+| 4 | Family documents, oral history, and undocumented lineage compilations | Family bibles, diaries, letters, oral testimony, home photographs with identified subjects, funeral-home web obituaries with no newspaper attribution, and compiled databases of user submissions that cite no underlying record (Ancestral File, Pedigree Resource File, IGI, Millennium File, Family Data Collection, AGBI, Yates *U.S. and International Marriage Records*) |
+| 5 | Online member trees | Ancestry Public and Private Member Trees, MyHeritage, Rootsweb/WorldConnect, Geneanet and GenealogieOnline user trees, personal genealogy websites, and FindAGrave memorials asserting relationships or dates with neither a stone nor a cited record |
 
-The practical consequence of this hierarchy is that most of the easily accessible online material sits at Tier 5. It takes active effort to trace T5 claims back to T1-2 records — that effort is what genealogical research actually is.
+The practical consequence of this hierarchy is that most of the easily accessible online material sits at Tier 3 or below. It takes active effort to trace those claims back to T1-2 records — that effort is what genealogical research actually is.
+
+### Curated shared trees are Tier 3; member trees are Tier 5
+
+**Amended 2026-08-08.** Until this revision both sat in one Tier 5 row. They are different artifacts. A single collaboratively maintained tree with per-change attribution, a visible edit history, and sources attached to the profile — the FamilySearch Family Tree, WikiTree, Geni — is a published derivative work with an audit trail, and a wrong claim in it can be seen, argued with, and corrected. A private member-tree upload is one person's unreviewed assertion that no one else can edit, and the same error propagates through copies without ever being visible as a single claim.
+
+This changes how much weight a lead carries while you chase it. It does not soften the Tier 5 Rule for either of them. Tier 3 never supports VERIFIED, a parent link resting on a shared tree alone is PROBABLE at best, and the correct action on finding a claim in any tree — shared or private — is still to trace it to the record and cite the record.
+
+### Find a Grave is graded on the artifact, not the platform
+
+A Find a Grave page can be any of three things, and the tier follows what is actually there:
+
+- **A photographed stone** → 2b. The image is a derivative copy of an original inscription.
+- **A transcription or index entry with no image** → 3. Somebody read something and typed it; you cannot check it.
+- **A memorial asserting relationships or dates with neither a stone nor a cited record** → 5. Linked spouse and child memorials are crowdsourced pointers, not confirmed relationships.
+
+This supersedes the flat "all FAG sources are Tier 3" rule and the six other assignments that had accumulated across project documents.
+
+### Finding aids are not sources and carry no tier
+
+A catalogue entry, a collection index, or a database description that tells you a record exists is a pointer. Record it as a lead, follow it to the record, and cite the record. A finding aid saying "baptism record exists at Parish X" is not itself the source; the baptism register is.
+
+### DNA does not sit on this hierarchy
+
+The tier hierarchy grades documents by how close they are to the event. DNA evidence answers a different question — whether two people are biologically related — and forcing it into a document tier misdescribes it. Record a DNA result as its own evidence type with the match data, segment information, and the tested relationship, and let it corroborate or contradict a documentary conclusion rather than substituting for one.
 
 ---
 
 ## The Tier 5 Rule
 
-**Online trees are research leads, not evidence.** They point to records; they do not constitute evidence.
+**Trees are research leads, not evidence.** They point to records; they do not constitute evidence. This holds for the curated shared trees at Tier 3 exactly as it holds for member trees at Tier 5 — the tier differs, the handling does not.
 
 When a FamilySearch tree or Ancestry member tree lists someone's parents, the correct action is:
 
@@ -50,7 +74,9 @@ When a FamilySearch tree or Ancestry member tree lists someone's parents, the co
 2. Attach those records as sources.
 3. Cite the records, not the tree.
 
-A claim backed only by Tier 5 sources has a maximum confidence of POSSIBLE. No exceptions.
+A claim backed only by trees has a maximum confidence of PROBABLE, and POSSIBLE where the only support is Tier 4-5. No exceptions.
+
+A Tier 5 source may be recorded in `evidence.sources` provided it is flagged as a lead. Storing it there is not an endorsement — it documents that the claim was examined and what it rests on, which is more useful than moving it out of sight. The confidence rules gate what it can support; its location does not.
 
 This matters most for parent-child links. It is easy to accept a FS tree's parent assignment, tag it PROBABLE, and move on. That is how conflation spreads. Trees mix up people of the same name constantly — same given name, same surname, same general era, different people. The fact that five trees agree does not make the conclusion more reliable; they may all copy from the same original error.
 
@@ -141,14 +167,20 @@ Most genealogical evidence is indirect. A census does not record birth dates —
 
 | Confidence | Minimum evidence |
 |---|---|
-| `VERIFIED` | ≥2 independent Tier 1 or Tier 2a sources, no unresolved blocking concerns |
-| `PROBABLE` | ≥1 Tier 1 or Tier 2a source; OR ≥2 independent Tier 2b sources from distinct derivations |
-| `POSSIBLE` | No T1-2a sources; or Tier 2b/3/4/5 only |
+| `VERIFIED` | ≥2 independent Tier 1-2 sources, no unresolved blocking concerns |
+| `PROBABLE` | ≥1 Tier 1-3 source |
+| `POSSIBLE` | No T1-3 sources; Tier 4-5 only, or tree-only |
 | `UNVERIFIED` | Not yet researched |
+| `DISPROVEN` | Evidence positively contradicts the claim, and the contradiction is documented |
+| `ERRONEOUS` | The claim is a known data defect — a conflation, a bad import, a wrong-person merge — retained so it is not re-added |
 
-The Tier 2a/2b distinction matters here. A church register image and a census transcription are both "Tier 2" in many systems, but only the original register qualifies as Tier 2a. Two Ancestry-transcribed census records are both Tier 2b — they can support PROBABLE together, but two 2b sources from the *same* original record do not count as independent.
+**Amended 2026-08-08: VERIFIED requires Tier 1-2, not Tier 1 or 2a.** The table previously excluded 2b, which no instrument has ever implemented: every scorer and the conformance checker's CONF-1 count tier 1-2 inclusive, and `source.schema.json` types `tier` as an integer 1-5, so 2a and 2b cannot be written to the data at all. The prose was stricter than every gate for the life of the project, which meant it gated nothing and quietly misdescribed what a VERIFIED label in the data actually asserts.
 
-"Independent" means the sources do not derive from the same original record. A transcription and the original document are not independent. Two censuses both copied from the same family's self-report are borderline — they corroborate each other but share the same informant.
+The Tier 2a/2b distinction remains methodologically real and is worth applying when you read a source, but treat it as advisory rather than as something the validator enforces. A church register image and a census transcription are both "Tier 2" in many systems, but only the original register qualifies as Tier 2a. Two Ancestry-transcribed census records are both Tier 2b — they can support VERIFIED together only if they derive from different originals.
+
+"Independent" means the sources do not derive from the same original record. A transcription and the original document are not independent. Two censuses both copied from the same family's self-report are borderline — they corroborate each other but share the same informant. This judgement is the researcher's; no checker can make it, because the data does not record which original a derivative came from.
+
+**Project-specific exception, documented rather than silent**: the `kindred` tree scores VERIFIED at three or more Tier 1-3 sources rather than two at Tier 1-2. That fork is deliberate — applying the standard rule would wrongly strip 34 legitimately VERIFIED profiles whose support is genuine published work — and it is recorded here so it reads as a known divergence rather than a bug each time someone rediscovers it. Any other project adopting a fork should add it to this list.
 
 **Zero sources = POSSIBLE maximum.** No script, no prior session, and no inherited tree value overrides this. If you find a person marked PROBABLE with no sources in `validation.evidence.sources`, that is a data quality bug to fix before any research session.
 
