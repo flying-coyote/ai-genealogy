@@ -33,9 +33,9 @@ These are worth understanding — they reveal genuine complexity, not simple err
 
 **Side B**: Self-published funeral home obituaries posted on legacy.com or funeral home websites with no newspaper backing are written by the family, have no editorial review, and should be Tier 4 (family-provided document). The "obituary = Tier 2" rule should apply only to newspaper obituaries, not to all documents labeled "obituary."
 
-**Current resolution**: The disagreement is about source type, not source category. **Rule**: Obituaries in verifiable newspaper archives (Newspapers.com, Chronicling America, digitized local papers) = Tier 2-3. Funeral home website obits with no newspaper attribution = Tier 4. When in doubt, look for whether the text was published in a newspaper or only on a funeral home/memorial site.
+**Current resolution**: The disagreement is about source type, not source category. **Rule**: Obituaries in verifiable newspaper archives (Newspapers.com, Chronicling America, digitized local papers) = Tier 2b. Funeral home website obits with no newspaper attribution = Tier 4. When in doubt, look for whether the text was published in a newspaper or only on a funeral home/memorial site.
 
-**Status**: Resolved in principle; formalize the rule in LESSONS.md once all three projects have applied it.
+**Status**: **RESOLVED and formalized 2026-08-08.** The rule is now in `LESSONS.md` (Obituaries name relationships explicitly) and both cases appear in the tier table at `methodology/02-evidence-standards.md` §Source Tier Hierarchy — newspaper-archive obituaries at 2b, funeral-home web obituaries at 4. This entry stays for the reasoning; the debate is closed.
 
 ---
 
