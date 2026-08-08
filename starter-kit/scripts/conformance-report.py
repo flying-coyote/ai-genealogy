@@ -57,6 +57,11 @@ CONCLUDED = ("VERIFIED", "PROBABLE")
 
 SEVERITY = {
     "CONF-1": "ERROR", "CONF-2": "ERROR", "CONF-3": "ERROR",
+    # CONF-4 (parent-side labels) ships WARN for one ratchet cycle to reveal the
+    # backlog, on the same pattern as JOUR-1 below, then promotes to ERROR once the
+    # 2026-08 re-tiering has drained it. A new ERROR key would gate at floor 0 and
+    # block every commit on day one.
+    "CONF-4": "WARN",
     "SRC-1": "WARN", "COV-1": "WARN", "DOC-1": "WARN",
     "UPG-1": "WARN", "DUR-1": "WARN", "GEN-1": "WARN",
     # Consistency gate (07): the per-person journal's reconciliation vs the tree conclusion.
@@ -65,9 +70,10 @@ SEVERITY = {
     "JOUR-1": "WARN", "JOUR-2": "WARN",
 }
 STANDARD_REF = {
-    "CONF-1": "02 §Confidence Rules (VERIFIED >=2 T1/2a)",
+    "CONF-1": "02 §Confidence Rules (VERIFIED >=2 independent T1-2)",
     "CONF-2": "02 §Confidence Rules (zero sources = POSSIBLE max)",
-    "CONF-3": "02 §The Tier 5 Rule (T5-only -> POSSIBLE max)",
+    "CONF-3": "02 §The Tier 5 Rule (T4-5 only -> POSSIBLE max)",
+    "CONF-4": "02 §Parent Certainty Tracking (parent-side label needs sources on that side)",
     "SRC-1":  "02 §Required Source Fields",
     "COV-1":  "03 §Platform Research Sequence (search Ancestry + FamilySearch)",
     "DOC-1":  "02 §Negative Searches (GPS Element 1)",
@@ -100,6 +106,34 @@ def tier_major(s):
     if isinstance(t, int): return t
     m = re.search(r"[1-5]", asstr(t))
     return int(m.group()) if m else None
+
+def source_identity(s):
+    """A key that two source objects share when they describe the same source.
+
+    The standard requires VERIFIED to rest on >=2 *independent* sources, and the
+    trees hold literal duplicates — one genealogy parent side carries 71 identical
+    copies of a single tree assertion — so counting raw rows lets one source satisfy
+    a two-source rule. Prefer the persistent locator; fall back to title+tier.
+    """
+    loc = (asstr(s.get("ark")) or asstr(s.get("url"))).strip().lower()
+    if loc:
+        return loc
+    return (asstr(s.get("name") or s.get("title")).strip().lower(), asstr(s.get("tier")))
+
+def distinct(srcs):
+    """De-duplicated source list, first occurrence wins."""
+    seen = {}
+    for s in srcs:
+        seen.setdefault(source_identity(s), s)
+    return list(seen.values())
+
+def parent_sides(p):
+    """(side, block) for each populated parent_confidence side."""
+    pc = asdict(asdict(p.get("validation")).get("parent_confidence"))
+    for side in ("father", "mother"):
+        blk = pc.get(side)
+        if isinstance(blk, dict) and blk:
+            yield side, blk
 
 def src_blob(s):
     return " ".join(asstr(s.get(k)) for k in ("platform", "url", "name", "ark")).lower()
@@ -205,7 +239,9 @@ def run_checks(persons, root=None):
         pid = p.get("id", "<no-id>")
         c = confidence(p)
         S = sources(p)
-        tier2 = [s for s in S if (tier_major(s) or 9) <= 2]
+        # "independent" is the operative word in the standard, so count distinct
+        # sources rather than rows — see source_identity().
+        tier2 = [s for s in distinct(S) if (tier_major(s) or 9) <= 2]
         majors = [tier_major(s) for s in S if tier_major(s)]
 
         # ERROR: confidence gate
@@ -213,8 +249,29 @@ def run_checks(persons, root=None):
             viol["CONF-1"].append(pid)
         if c in CONCLUDED and len(S) == 0:
             viol["CONF-2"].append(pid)
-        if c in ("VERIFIED", "PROBABLE") and majors and min(majors) >= 5:
+        # Tier 4 is "family documents and undocumented lineage compilations" and
+        # Tier 5 is member trees; neither supports a concluded label. This tested
+        # >= 5 until 2026-08-08, which is why demoting a tree row to Tier 4 silently
+        # passed the check that exists to catch exactly that.
+        if c in ("VERIFIED", "PROBABLE") and majors and min(majors) >= 4:
             viol["CONF-3"].append(pid)
+
+        # WARN: a parent-side label must be carried by sources on that side.
+        # Nothing checked this before 2026-08-08, and person-level evidence does not
+        # substitute — a well-documented person can have undocumented parentage,
+        # which is the whole reason parent_confidence is tracked separately.
+        for side, blk in parent_sides(p):
+            sc = asstr(blk.get("confidence")).upper()
+            if sc not in CONCLUDED:
+                continue
+            uniq = distinct(aslist(blk.get("sources")))
+            if sc == "VERIFIED":
+                if len([s for s in uniq if (tier_major(s) or 9) <= 2]) < VERIFIED_MIN_TIER2_SOURCES:
+                    viol["CONF-4"].append(pid)
+                    break
+            elif not [s for s in uniq if (tier_major(s) or 9) <= 3]:
+                viol["CONF-4"].append(pid)
+                break
 
         # WARN: source-field completeness
         for s in S:
