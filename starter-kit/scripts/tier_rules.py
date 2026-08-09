@@ -137,9 +137,20 @@ def source_identity(source):
     """
     loc = (_asstr(source.get("ark")) or _asstr(source.get("url"))).strip().lower()
     if loc and is_record_locator(loc):
-        return loc
-    return (_asstr(source.get("name") or source.get("title")).strip().lower(),
-            _asstr(source.get("tier")))
+        # Normalise scheme and host prefix: @I29566154585@ Elizabeth Talbott carries
+        # Richard Talbott's 1663 will twice, once as http://msa.maryland.gov/... and once
+        # as https://, and counting one document as two independent sources is the exact
+        # error this function exists to prevent.
+        return re.sub(r"^https?://(www\.)?", "", loc)
+    # Fall back to the citation when there is no name or title. Kindred stores whole
+    # populations with name and title both None but a specific citation — "Daviess County,
+    # Kentucky. Probate Records 1812-1896. Will of Adam Shoemaker", "Monongalia County
+    # court summons, January 1843" — which are plainly different records, and keying them
+    # on (None, tier) collapsed three deeds, a will and a tax list into one source.
+    label = _asstr(source.get("name") or source.get("title")).strip().lower()
+    if not label or label == "none":
+        label = _asstr(source.get("citation")).strip().lower()[:160]
+    return (label, _asstr(source.get("tier")))
 
 
 def distinct(sources):

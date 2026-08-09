@@ -133,8 +133,14 @@ def source_identity(s):
     """
     loc = (asstr(s.get("ark")) or asstr(s.get("url"))).strip().lower()
     if loc and is_record_locator(loc):
-        return loc
-    return (asstr(s.get("name") or s.get("title")).strip().lower(), asstr(s.get("tier")))
+        # Same document over http and https is one source, not two.
+        return re.sub(r"^https?://(www\.)?", "", loc)
+    # No name or title: key on the citation. Kindred stores whole populations with both
+    # None but a specific citation naming a distinct county record.
+    label = asstr(s.get("name") or s.get("title")).strip().lower()
+    if not label or label == "none":
+        label = asstr(s.get("citation")).strip().lower()[:160]
+    return (label, asstr(s.get("tier")))
 
 
 # A project may declare a documented VERIFIED fork in .conformance-profile.json. Until
