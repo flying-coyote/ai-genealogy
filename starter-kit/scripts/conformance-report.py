@@ -57,11 +57,11 @@ CONCLUDED = ("VERIFIED", "PROBABLE")
 
 SEVERITY = {
     "CONF-1": "ERROR", "CONF-2": "ERROR", "CONF-3": "ERROR",
-    # CONF-4 (parent-side labels) ships WARN for one ratchet cycle to reveal the
-    # backlog, on the same pattern as JOUR-1 below, then promotes to ERROR once the
-    # 2026-08 re-tiering has drained it. A new ERROR key would gate at floor 0 and
-    # block every commit on day one.
-    "CONF-4": "WARN",
+    # CONF-4 (parent-side labels) shipped WARN for one ratchet cycle to reveal the
+    # backlog without gating every commit at floor 0 on day one. That backlog is now
+    # drained -- 0 in all three trees as of 2026-08-09 -- so it becomes an ERROR and the
+    # gate holds the line: a parent-side label must be carried by sources on that side.
+    "CONF-4": "ERROR",
     "SRC-1": "WARN", "COV-1": "WARN", "DOC-1": "WARN",
     "UPG-1": "WARN", "DUR-1": "WARN", "GEN-1": "WARN",
     # Consistency gate (07): the per-person journal's reconciliation vs the tree conclusion.
@@ -308,7 +308,10 @@ def run_checks(persons, root=None):
                 continue
             uniq = distinct(aslist(blk.get("sources")))
             if sc == "VERIFIED":
-                if len([s for s in uniq if (tier_major(s) or 9) <= 2]) < VERIFIED_MIN_TIER2_SOURCES:
+                # Scored under the project's own VERIFIED rule, the same one CONF-1 uses.
+                # A tree cannot mean one thing by VERIFIED on a person and another on an
+                # edge; kindred's documented fork applies to both or it is not a rule.
+                if len([s for s in uniq if (tier_major(s) or 9) <= rule["min_tier"]]) < rule["min_count"]:
                     viol["CONF-4"].append(pid)
                     break
             elif not [s for s in uniq if (tier_major(s) or 9) <= 3]:
