@@ -325,8 +325,16 @@ def run_checks(persons, root=None):
                 break
 
         # WARN: source-field completeness
+        # `is not None`, not truthiness: tier 0 is a deliberate convention, not a missing
+        # field. kindred's classify-untiered-sources.py writes it on audit-pointer rows
+        # (Find A Grave, Social Security, BillionGraves) to mean "catalogued, not
+        # evidence", and tier_rules.evaluate() already reads it that way. Under the old
+        # test those 51 rows counted as tierless. Measured, this changes no count today --
+        # every person holding one also fails SRC-1 on `proves` or on a locator -- but the
+        # check would have started lying the moment one of them gained both.
         for s in S:
-            if not (s.get("tier") and s.get("proves") and (s.get("ark") or s.get("url"))):
+            if not (s.get("tier") is not None and s.get("proves")
+                    and (s.get("ark") or s.get("url"))):
                 viol["SRC-1"].append(pid)
                 break
 
