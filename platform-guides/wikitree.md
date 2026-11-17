@@ -9,7 +9,7 @@ title: "WikiTree Platform Guide"
 
 WikiTree is a single shared collaborative tree — all contributors edit the same profile for a given historical person, not separate copies. This means edits are visible to and reversible by the entire community. It is the most valuable platform for pre-1700 European ancestry and provides a useful cross-check against FS and Ancestry data on American lineages. The API is strictly read-only. All edits require the browser or browser automation via CDP.
 
-**See also: [`wikitree-browser-extension.md`](./wikitree-browser-extension.md)** for the WikiTree Browser Extension capability reference (~100 features: Bio Check, WikiTree+ integration, Auto Bio, Find A Grave extractor, etc.). The extension's built-in Bio Check encodes Lukas Murphy's source-quality rules as executable logic — running it before save catches exactly the regressions he flagged.
+**See also: [`wikitree-browser-extension.md`](./wikitree-browser-extension.md)** for the WikiTree Browser Extension capability reference (~100 features: Bio Check, WikiTree+ integration, Auto Bio, Find A Grave extractor, etc.). The extension's built-in Bio Check encodes the mentor's source-quality rules as executable logic — running it before save catches exactly the regressions the mentor flagged.
 
 ---
 
@@ -193,9 +193,9 @@ If API access is blocked, contact `info@wikitree.com`. UI-unblocked accounts may
 
 When a WikiTree account triggers Error 2562 (automation rate limit), the block is both **durable** (48+ days observed) and **account-wide** (UI + API + login all fail). The account manager's identity does not transfer; blocked accounts cannot be recovered by a clean login from a new IP or session.
 
-**Observed case**: Wiley-6910 (the `[coordinator-account]` login) blocked 2026-03-02 after ~993 automated edits in 5 days. As of 2026-04-19 (day 48), still returns Error 2562 on every action. Email to `info@wikitree.com` did not yield recovery.
+**Observed case**: The `[coordinator-account]` login blocked 2026-03-02 after ~993 automated edits in 5 days. As of 2026-04-19 (day 48), still returns Error 2562 on every action. Email to `info@wikitree.com` did not yield recovery.
 
-**Mitigation pattern**: use a secondary account for contributions (Wiley-6998 in the genealogy project), assigned to a mentor for supervision, with all edits via browser UI (no automation). Enforce per-account rate limits:
+**Mitigation pattern**: use a secondary account for contributions (the `[contributor-account]` in the genealogy project), assigned to a mentor for supervision, with all edits via browser UI (no automation). Enforce per-account rate limits:
 - 350 edits/day, 600 edits/rolling-7-days (canonical; see Rate Limiter section)
 - ≥30s minimum between edits (self-imposed floor; see Rate Limiter section)
 - ≤16 edits per 30-minute window
@@ -206,7 +206,7 @@ Shared lockfile pattern: `~/.wikitree-contribution-log.jsonl` enforced by `scrip
 
 ## Mentor-guided citation format
 
-Per guidance from mentor Lukas Murphy (2026-04-11) on the Wiley-6998 account, WikiTree profiles should use inline `<ref>` citations with the format:
+Per guidance from a WikiTree volunteer mentor (2026-04-11) on the `[contributor-account]`, WikiTree profiles should use inline `<ref>` citations with the format:
 
 ```wiki
 Phillip Brogan was born about 1740 in Virginia.<ref name="brogan_families">Daniel S. Brogan, "The Brogan Families of Early America" (2011, revised 2022).</ref>
@@ -223,7 +223,7 @@ Example profile for reference style: Reffitt-189 (timeline style), Rose Marie Cl
 
 Non-standard headers to avoid: `=== Additional Records ===`, `=== Cross-Platform Profile Links ===` — these are not WikiTree idiomatic.
 
-## Source-quality: what NOT to cite (Lukas feedback 2026-04-21)
+## Source-quality: what NOT to cite (mentor feedback 2026-04-21)
 
 Three citation patterns the mentor flagged as unacceptable. These look plausible at a glance but are not valid sources for a WT profile:
 
@@ -328,7 +328,7 @@ If the dangling ref documents a *different person* (different name, different li
 
 ### Skip conditions (do not edit, regardless of branch)
 
-- **Pre-1700 birth without PGM cert**: Wiley-6998 (and any non-certified account) hits a UI textarea-lock on pre-1700 profiles. The edit page renders no editable field. Detect by birth year < 1700 and skip at queue-build time.
+- **Pre-1700 birth without PGM cert**: the `[contributor-account]` (and any non-certified account) hits a UI textarea-lock on pre-1700 profiles. The edit page renders no editable field. Detect by birth year < 1700 and skip at queue-build time.
 - **Empty/sparse bio (<200 chars, no inline refs)**: Resolving dangling refs here would require inventing inline factual sentences — exactly the automation signal that triggered the 2026-03-01 Error 2562 block. Defer to per-person research session.
 - **Vague placeholder refs**: Citations like `"Published county history"` with no ARK or page number are not actionable for inline invocation. Needs human source research, not formatting cleanup.
 
