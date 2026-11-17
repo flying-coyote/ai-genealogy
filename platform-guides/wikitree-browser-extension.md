@@ -14,13 +14,13 @@ Upstream: https://github.com/wikitree/WikiTree-Browser-Extension · MIT
 
 ## Why this extension matters for our workflow
 
-Our mentor a WikiTree volunteer mentor flagged (2026-04-21) three source-quality anti-patterns
+Our WikiTree volunteer mentor flagged (2026-04-21) three source-quality anti-patterns
 in our contributions: WT profiles cited as sources, FS profile URLs instead
 of record ARKs, and vague no-URL aggregator blobs. The extension's built-in
 **Bio Check** feature (`src/features/bioCheck/`) encodes ~100 invalid-source
 patterns as an executable `SourceRules` class — essentially the same rules
 the mentor is teaching, in reusable form. Running Bio Check on a profile before
-posting catches exactly the regressions he flagged.
+posting catches exactly the regressions the mentor flagged.
 
 The extension also integrates with `plus.wikitree.com` for per-profile error
 lists (Error 305 mother-too-young, Error 406 date conflicts, etc.), which is
@@ -141,7 +141,7 @@ Open the options page in your CDP browser:
 chrome-extension://imdflchbmmlikjngjekjbeieoocfhbab/options.html
 ```
 
-For the the mentor-aligned source-quality workflow, the following 5 are
+For the mentor-aligned source-quality workflow, the following 5 are
 default-on but make sure to enable Auto-Suggestions explicitly (it's the
 only one off by default that you actually want):
 
@@ -335,7 +335,7 @@ own `#suggestionsTable` link href on Rodgers-10206):
 `<N>` is the **numeric** user ID, not the WT-ID. To find it: open the
 target person's WT profile page with the BE loaded, view the suggestions
 panel — the "View the report on WikiTree Plus" link's href contains
-`UserID=<numeric>`. (the blocked account's numeric ID.)
+`UserID=<numeric>`. (The blocked account has one too.)
 
 Layout: one HTML `<table>` per error code. Header row's `td[0]` (with
 `rowspan=2`, bg `#FFDDDD`) carries the `Error|Warning|Hint NNN: title`
